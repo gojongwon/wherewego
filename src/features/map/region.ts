@@ -92,10 +92,3 @@ export function findRegion(
   if (km > snapKm) return null;
   return { index: bestIndex, snapped: true, point: bestPt, landing: pt, snapKm: km };
 }
-
-/** SVG path d 문자열 (소수 1자리로 반올림해 DOM 크기 절감) */
-export function ringsToPath(rings: readonly Point[][]): string {
-  return rings
-    .map((r) => 'M' + r.map((p) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('L') + 'Z')
-    .join('');
-}

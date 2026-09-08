@@ -20,7 +20,7 @@ describe('inRing / pointInRegion', () => {
 
   it('구멍(even-odd): 외곽 안이지만 구멍 안이면 밖', () => {
     const sr: ScreenRegion = {
-      region: { code: '00000', name: 'T', rings: [] },
+      region: { code: '00000', name: 'T', polygons: [], rings: [] },
       rings: [square(0, 0, 10), square(4, 4, 2)],
       bbox: [0, 0, 10, 10],
     };

@@ -17,8 +17,13 @@ export default defineConfig({
     baseURL: 'http://127.0.0.1:4173',
     launchOptions: {
       ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}),
-      // 컨테이너(root)에서만 필요. 로컬 Mac에서는 설정하지 않는다.
-      ...(process.env.PW_NO_SANDBOX ? { args: ['--no-sandbox'] } : {}),
+      args: [
+        // headless Chromium(≥128)에서 소프트웨어 WebGL(SwiftShader) 허용 — 3D 씬 렌더용
+        '--enable-unsafe-swiftshader',
+        '--ignore-gpu-blocklist',
+        // 컨테이너(root)에서만 필요. 로컬 Mac에서는 설정하지 않는다.
+        ...(process.env.PW_NO_SANDBOX ? ['--no-sandbox'] : []),
+      ],
     },
   },
   webServer: {

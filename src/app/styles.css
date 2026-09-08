@@ -58,23 +58,6 @@ body {
   cursor: crosshair;
 }
 
-/* ---------- 지도 (2D SVG — 3D 씬으로 대체 예정) ---------- */
-.sgg {
-  fill: var(--map-land-1);
-  stroke: var(--map-land-edge);
-  stroke-width: 0.6;
-  stroke-linejoin: round;
-  transition: fill var(--motion-duration-base);
-}
-.sgg.hit {
-  fill: var(--map-highlight);
-}
-.grid line {
-  stroke: var(--map-grid);
-  stroke-width: 0.6;
-  fill: none;
-}
-
 /* ---------- HUD ---------- */
 .hud {
   position: absolute;

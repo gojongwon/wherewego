@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { LAYOUT } from '@/shared/params';
 import { Toast } from '@/shared/ui';
-import { REGIONS, MapLayer, fitMercator, fullName, toScreen } from '@/features/map';
+import { REGIONS, fitMercator, fullName, toScreen } from '@/features/map';
 import { FxLayer, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
@@ -96,11 +96,24 @@ export function App() {
   const hitIndex = state.shot?.hit && state.phase !== 'FLYING' ? state.shot.hit.index : null;
 
   return (
-    <div className="stage" ref={stageRef}>
+    <div
+      className="stage"
+      ref={stageRef}
+      data-phase={state.phase}
+      data-hit={hitIndex !== null ? REGIONS[hitIndex].code : ''}
+    >
       {layout && projection && screen && (
         <>
-          <SceneLayer width={layout.width} height={layout.height} mapBox={layout.mapBox} shiftY={shiftY} />
-          <MapLayer screen={screen} projection={projection} hitIndex={hitIndex} shiftY={shiftY} />
+          <SceneLayer
+            width={layout.width}
+            height={layout.height}
+            mapBox={layout.mapBox}
+            regions={REGIONS}
+            screen={screen}
+            projection={projection}
+            hitIndex={hitIndex}
+            shiftY={shiftY}
+          />
           <FxLayer
             anchor={layout.anchor}
             dMax={layout.dMax}

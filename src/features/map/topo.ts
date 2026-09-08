@@ -19,7 +19,9 @@ export interface Region {
   /** KOSTAT 시군구 코드 (앞 2자리 = 시도) */
   code: string;
   name: string;
-  /** 외곽·구멍을 구분하지 않고 평탄화한 링들 — even-odd 판정으로 구멍 자동 처리 */
+  /** 폴리곤별 [외곽, ...구멍] — 3D extrude(THREE.Shape.holes)용으로 구조를 보존 */
+  polygons: LonLat[][][];
+  /** 외곽·구멍을 평탄화한 링들(= polygons.flat()) — even-odd 판정으로 구멍 자동 처리 */
   rings: LonLat[][];
 }
 
@@ -57,11 +59,8 @@ export function decodeTopo(topo: Topology, layer?: string): Region[] {
   };
 
   return collection.geometries.map((g) => {
-    const polygons = (g.type === 'Polygon' ? [g.arcs] : g.arcs) as number[][][];
-    return {
-      code: g.properties.code,
-      name: g.properties.name,
-      rings: polygons.flatMap((poly) => poly.map(ring)),
-    };
+    const polys = (g.type === 'Polygon' ? [g.arcs] : g.arcs) as number[][][];
+    const polygons = polys.map((poly) => poly.map(ring));
+    return { code: g.properties.code, name: g.properties.name, polygons, rings: polygons.flat() };
   });
 }
