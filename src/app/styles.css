@@ -1,13 +1,6 @@
 /* 앱 레벨 스타일. 토큰은 src/shared/tokens/tokens.css (자동 생성, 출처 tokens.json). 설계서 §4.3 — 낮·종이지도, 라이트 단일 테마. */
 :root {
   color-scheme: light;
-
-  /* 레거시 별칭 — FxLayer.tsx / MapLayer.tsx(SVG)가 참조. 3D 씬 전환으로 두 파일이 삭제되면 함께 지운다. */
-  --ink: var(--map-arrow-ink);
-  --accent: var(--map-arrow-accent);
-  --hit: var(--map-impact);
-  --land: var(--color-ink-700);
-  --dim: var(--map-pin-miss);
 }
 
 * {
@@ -50,7 +43,6 @@ body {
   height: 100%;
   display: block;
   pointer-events: none;
-  transition: transform var(--motion-duration-slow) var(--motion-easing-out);
 }
 .input-layer {
   position: absolute;
@@ -114,32 +106,4 @@ body {
   color: var(--color-text-muted);
   pointer-events: none;
   letter-spacing: 0.02em;
-}
-
-/* ---------- 임팩트 (SVG 연출 — 3D 씬으로 대체 예정) ---------- */
-@keyframes impact-ring {
-  from {
-    r: 6;
-    opacity: 0.9;
-  }
-  to {
-    r: 46;
-    opacity: 0;
-  }
-}
-.impact {
-  fill: none;
-  stroke: var(--map-impact);
-  stroke-width: 2;
-  animation: impact-ring 0.7s ease-out forwards;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .layer {
-    transition: none;
-  }
-  .impact {
-    animation: none;
-    opacity: 0;
-  }
 }

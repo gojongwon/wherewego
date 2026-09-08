@@ -2,8 +2,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, u
 import { LAYOUT } from '@/shared/params';
 import { Toast } from '@/shared/ui';
 import { REGIONS, fitMercator, fullName, toScreen } from '@/features/map';
-import { FxLayer, type ShotGeometry } from '@/features/shooter';
-import { SceneLayer } from '@/features/scene';
+import { InputLayer, createAimState, type ShotGeometry } from '@/features/shooter';
+import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
@@ -15,6 +15,8 @@ export function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const phaseRef = useRef(state.phase);
   phaseRef.current = state.phase;
+  // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
+  const [aim] = useState(createAimState);
 
   // ---- 스테이지 크기: IDLE에서만 반영 (연출 중 레이아웃 변경 금지, 설계서 §7)
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -108,23 +110,28 @@ export function App() {
             width={layout.width}
             height={layout.height}
             mapBox={layout.mapBox}
+            anchor={layout.anchor}
+            dMax={layout.dMax}
             regions={REGIONS}
             screen={screen}
             projection={projection}
-            hitIndex={hitIndex}
-            shiftY={shiftY}
-          />
-          <FxLayer
-            anchor={layout.anchor}
-            dMax={layout.dMax}
-            shiftY={shiftY}
+            aim={aim}
             phase={state.phase}
             shot={state.shot}
+            hitIndex={hitIndex}
+            shiftY={shiftY}
+            onFlightEnd={() => dispatch({ type: 'LAND' })}
+          />
+          <InputLayer
+            anchor={layout.anchor}
+            dMax={layout.dMax}
+            phase={state.phase}
+            aim={aim}
             onAimStart={() => dispatch({ type: 'AIM_START' })}
             onAimMove={(ratio, inDeadZone) => dispatch({ type: 'AIM_MOVE', ratio, inDeadZone })}
             onAimCancel={() => dispatch({ type: 'AIM_CANCEL' })}
             onFire={onFire}
-            onFlightEnd={() => dispatch({ type: 'LAND' })}
+            onFrame={invalidate}
           />
         </>
       )}

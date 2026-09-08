@@ -2,7 +2,7 @@
 
 > 지도 아래에서 화살을 당겨 쏘고, 꽂힌 **시/군/구**가 이번 여행지.
 
-모바일 세로 화면용 웹 게임. 외부 지도 API·서버 없이 정적 파일만으로 동작하며, 결과는 URL 하나로 공유·재현됩니다.
+모바일 세로 화면용 웹 게임. 종이지도 느낌의 three.js 3D 씬 위에서 활을 당겨 쏩니다. 외부 지도 API·서버 없이 정적 파일만으로 동작하며, 결과는 URL 하나로 공유·재현됩니다.
 설계는 [`docs/DESIGN.md`](docs/DESIGN.md)에, 튜닝 파라미터는 [`src/shared/params.ts`](src/shared/params.ts)에 모여 있습니다.
 
 ## 시작하기
@@ -21,6 +21,8 @@ npm run dev          # http://localhost:5173 (--host 로 같은 Wi-Fi의 휴대�
 | `npm test` | Vitest — 투영 왕복, 판정(구멍·스냅·헛발), 사거리 곡선, 상태 머신 등 |
 | `npm run e2e` | Playwright — iPhone 14 뷰포트에서 발사→결과, 취소, 공유 URL 재현. 처음 한 번 `npx playwright install chromium` |
 | `npm run map:build` | 시군구 경계 데이터 재생성 (mapshaper, `SIMPLIFY=20%` 로 강도 조절) |
+| `npm run tokens:build` | 디자인 토큰 빌드 — `src/shared/tokens/tokens.json` → `tokens.css` + `tokens.ts` (build 전 자동 실행) |
+| `/design` | 개발 서버에서 `http://localhost:5173/design` — 토큰·프리미티브 쇼케이스 (배포 번들에는 없음) |
 
 ## 어떻게 동작하나
 
@@ -51,8 +53,9 @@ IDLE → AIMING → FLYING → LANDED → RESULT → (다시 쏘기) → IDLE
 
 ```
 src/app        상태 머신·레이아웃·화면 조립
-src/features   map(데이터·투영·판정) / shooter(입력·물리·연출) / result(시트·공유)
-src/shared     params(튜닝 단일 출처) · geo
+src/features   map(데이터·투영·판정) / shooter(입력·물리) / scene(three.js 3D 씬) / result(시트·공유)
+src/shared     params(튜닝 단일 출처) · geo · tokens(디자인 토큰) · ui(Button·Sheet·Toast)
+src/design     /design 쇼케이스 (dev 전용)
 e2e            Playwright 시나리오
 scripts        데이터 파이프라인
 docs           설계서

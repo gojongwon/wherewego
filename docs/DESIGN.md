@@ -1,11 +1,11 @@
-# 우리 어디가 (where-we-go) — 설계서 v0.1.1
+# 우리 어디가 (where-we-go) — 설계서 v0.2
 
 | 항목 | 내용 |
 |---|---|
-| 문서 상태 | v0.1.1 — MVP 스캐폴드에 맞춰 갱신 (v0.1: 2026-09-08 구현 전 초안) |
+| 문서 상태 | v0.2 — 디자인 리뉴얼(낮·종이지도)·three.js 3D 전환·디자인 토큰 반영 (v0.1.1: MVP 스캐폴드, v0.1: 구현 전 초안) |
 | 작성일 | 2026-09-08 |
 | 대상 | 모바일 웹 (세로), 정적 호스팅 (GitHub Pages / Cloudflare Pages) |
-| 스택 | Vite + React + TypeScript, SVG 지도 + rAF 연출, 외부 지도 API 없음 |
+| 스택 | Vite + React + TypeScript, three.js/React Three Fiber 3D 씬(기울어진 직교 카메라), DTCG 디자인 토큰(Style Dictionary), 외부 지도 API 없음 |
 | 함께 보는 것 | 이 저장소의 `src/` (데모 v0.1은 단일 HTML `arrow-travel-demo.html`로 검증 후 이식) |
 
 ---
@@ -99,22 +99,30 @@ IDLE ──pointerdown──▶ AIMING ──pointerup(|p|≥deadZone)──▶ 
 
 ### 4.2 레이어 구성 (z 순서)
 
-1. `#mapLayer` (SVG) — 1° 경위도 격자, 시군구 path. **한 번 그리고 고정**. 결과 시 `transform: translateY(-Δ)`로만 이동.
-2. `#fxLayer` (SVG) — 조준선, 조준점, 게이지, 활, 비행 화살, 그림자, 궤적, 임팩트/핀. rAF에서 **속성 직접 갱신** (React 리렌더 없음).
-3. `#input` (div) — 입력 전용 투명 레이어. `touch-action: none`, `setPointerCapture`.
-4. HUD(브랜드, 힌트) — `pointer-events: none`.
-5. 결과 시트(bottom sheet) — 버튼만 인터랙티브.
+1. `SceneLayer` (three.js Canvas, `features/scene`) — 바다 시트·1° 격자, 249 시군구 extrude 지형(드로우콜 1)+외곽선, 활·시위·장전 화살, 조준선(점선)·조준점·게이지, 비행 화살·그림자·궤적 리본, 임팩트·핀·스냅 점선. **`frameloop="demand"`** — IDLE에서는 프레임 0, 포인터/애니메이션이 `invalidate()`로 프레임을 요청한다. 프레임 단위 갱신은 `useFrame` + ref (React 리렌더 없음).
+2. `InputLayer` (div, `features/shooter`) — 입력 전용 투명 레이어. `touch-action: none`, `setPointerCapture`. 당김을 mutable `AimState`에 쓰고 씬(Bow·AimGuide)이 프레임마다 읽는다.
+3. HUD(브랜드, 힌트) — `pointer-events: none`.
+4. 결과 시트(bottom sheet, `shared/ui/Sheet`) — 버튼만 인터랙티브. 시트가 착지점을 가리면 **카메라**를 shiftY만큼 이동한다(`translateY(-shiftY)`와 등가).
 
 ### 4.3 비주얼 톤
 
-밤바다 위의 지도. 바다 `#0F2230`(딥 네이비), 육지 `#DCCFA9`(모래), 경계 `#7A6B4A`, 강조(화살·조준·게이지) `#F5B84A`(호박), 임팩트·핀 `#E8613C`(감), 텍스트 `#F4EFE3`. 디스플레이 서체 Do Hyeon(지역명), 본문 Noto Sans KR. 단일 테마(게임 화면)로 고정.
+낮의 종이지도(2026-09-08 리뉴얼). 크림 종이 배경 `#F6EFDC`, 시트 `#FFFCF3`, 잉크 텍스트 `#2B2118`, 종이 파랑 물 `#CFE2E8`(옆면 `#B4D0D9`), 육지는 시도별 파스텔 5색(sage `#CFE0B8` · sand `#F3E3A8` · peach `#F6CDB3` · lilac `#DCD3EA` · mint `#C6E3DB`, 인접 시도 상이 — `scene/palette.test.ts`) + 잉크 외곽선 `#75634F`, 강조(화살촉·조준·게이지·primary 버튼) 오렌지 `#E8702A`(텍스트는 `#A64A12`), 하이라이트 `#F3A15F`, 임팩트 `#C9432F`. 디스플레이 서체 Jua(지역명·브랜드·버튼), 본문 Gowun Dodum. 라이트 단일 테마(게임 화면)로 고정.
+
+**단일 출처는 `src/shared/tokens/tokens.json`(W3C DTCG).** `npm run tokens:build`(Style Dictionary v5)가 `tokens.css`(CSS 변수, primitive→semantic→component 3계층)와 `tokens.ts`(three.js 머티리얼용 상수)를 생성하고 둘 다 커밋한다(`prebuild`로 stale 방지). `tokens.test.ts`가 WCAG AA 대비를 고정한다. 컴포넌트 프리미티브는 `src/shared/ui`(Button·Sheet·Toast·text.css, 플레인 CSS·전역 클래스), 쇼케이스는 dev 전용 `/design`(`design.html`, 프로덕션 번들 밖).
+
+### 4.5 3D 좌표계 · 카메라
+
+월드 = 레이아웃 px (`x→x`, `z→y(아래)`, `y=높이`, 1unit = 1px). 카메라는 **기울어진 직교(orthographic)**, 피치 θ=55°(`SCENE.pitchDeg`), 프러스텀 높이 `H·sinθ` → 지면 점 `(x,0,z)`가 화면 px `(x, z−shiftY)`에 **항등 매핑**된다(`scene/camera.ts`). 그래서 `computeShot`·`findRegion`·`LAYOUT`·`PARAMS`의 px 수치가 모두 그대로 유효하고, 드래그 벡터가 곧 지면 벡터라 레이캐스트가 필요 없다. 높이 h는 화면 위로 `h·cotθ`px 시어되어 extrude 측벽(남쪽 면)·화살 아치·그림자로 입체감이 난다. 불변식은 `scene/camera.test.ts`가 고정한다. 원근 카메라로 바꾸려면 `CameraRig` + 입력 언프로젹션만 교체.
+
+- 높이 레벨: 바다 시트 −3.5..−0.5 · 격자 −0.3 · 육지 0..8(`SCENE.depth`) · 외곽선 8.2 · 맞은 시군구 +4(`SCENE.hitLift`) · 오버레이 UI(조준선·게이지·임팩트·그림자·마커) 0.4에 `depthTest: false`
+- 조명·톤매핑 없음(`flat`, `MeshBasicMaterial` + 정점색 베이크) → 토큰 hex가 그대로 렌더된다. 추가하면 대비를 다시 검증할 것.
 
 ### 4.4 결과 시트
 
 | 요소 | 내용 |
 |---|---|
 | 아이브로 | "이번 여행지" / 헛발이면 "헛발" |
-| 지역명 | 시군구 (Do Hyeon 40px). `수원시장안구` → `수원시 장안구`로 표시 |
+| 지역명 | 시군구 (Jua 40px, `.t-display`). `수원시장안구` → `수원시 장안구`로 표시 |
 | 시/도 | 강조색. 코드 앞 2자리 기준 + 예외(군위군→대구) |
 | 메타 | 좌표(소수 4자리), 바람(조준점 대비 빗나간 km), 행정코드 |
 | 노트 | 스냅됐을 때 "바다에 떨어졌지만 N km 옆 해안으로 붙였어요" |
@@ -163,6 +171,17 @@ shadow = pos + (18h, 26h), opacity 0.28·(1 − 0.6h)
 
 `prefers-reduced-motion`이면 τ=1로 즉시 착지.
 
+3D에서는 위 수식을 그대로 쓰되 높이를 실제 y로 올린다 (`scene/pose.ts`):
+
+```
+apexH = clamp(apexRatio · d, 30, 160)                             // 정점 높이 (unit = px)
+pos = (anchor + (landing − anchor)·e,  apexH·h)
+yaw = −atan2(dz, dx)
+pitch = max(atan2(vy, v수평), −pinPitch)     // easeOut'(1)=0 → 마지막에 정확히 −pinPitch(62°)로 꽂힘
+```
+
+그림자는 같은 화살 메시를 지면(오버레이 높이)에 납작하게 깔고, 궤적은 48샘플 리본(최신이 넓고 진함). 직교 카메라라 원근 확대가 없어 `apexScale`은 0.35로 낮췄다. 핀은 비행 화살 메시 그대로 스냅 지점에 `−pinPitch`로 꽂힌다(맞으면 솟은 시군구 윗면 높이).
+
 ### 5.5 튜닝 파라미터 (데모 v0.1 값)
 
 | 이름 | 값 | 의미 | 조절 방향 |
@@ -175,7 +194,9 @@ shadow = pos + (18h, 26h), opacity 0.28·(1 − 0.6h)
 | `windSigma` | 0.03 | 바람 σ / 사거리 | ↑ 뽑기 성격 강화 |
 | `snapKm` | 30 km | 바다 착지 시 스냅 허용 | ↑ 헛발 감소 |
 | `tMin / tMax` | 650 / 1200 ms | 비행 시간 | 느리면 지루, 빠르면 안 보임 |
-| `apexScale` | 1.4 | 정점 확대 | 높이감 |
+| `apexScale` | 0.35 | 정점 확대 (직교라 약하게) | 높이감 보조 |
+| `apexRatio` | 0.22 | 정점 높이 / 사거리 (30..160 클램프) | ↑ 아치 높이 |
+| `pinPitchDeg` | 62 | 꽂힌 화살 기울기 | 비행 마지막 피치가 여기로 수렴 |
 
 **알려진 트레이드오프:** 제주는 전체 사거리의 약 5%라 당김 폭 약 11px 구간에 해당한다. 어느 시군구든 3~5%라 이는 구조적이며, 바람 σ가 이를 압도한다. 앵커를 더 내리면(지도 축소) 제주 구간이 넓어진다. 플레이테스트 후 결정.
 
@@ -258,55 +279,73 @@ shadow = pos + (18h, 26h), opacity 0.28·(1 − 0.6h)
 | 영역 | 선택 | 이유 |
 |---|---|---|
 | 빌드/프레임워크 | Vite 8 + React 19 + TypeScript 5.9 | 정적 빌드, 다른 사이드 프로젝트와 동일 스택 |
-| 지도 렌더 | SVG (React가 path 생성, 이후 고정) | 249 path는 SVG로 충분, 스타일링 쉬움 |
-| 화살/연출 | SVG + `requestAnimationFrame`, DOM 속성 직접 갱신 | 화살 하나에 물리 엔진 불필요 |
+| 지도·연출 렌더 | three.js 0.185 + @react-three/fiber 9 (`features/scene`) | 249 시군구 extrude 지형(병합, 드로우콜 1) + 기울어진 직교 카메라로 2D 좌표 그대로(§4.5). drei 미사용 |
+| 화살/연출 | `useFrame` + ref, `frameloop="demand"` | 프레임당 setState 0, IDLE 프레임 0. 화살은 절차적 지오메트리(glTF 없음) |
+| 디자인 토큰 | DTCG `tokens.json` → Style Dictionary v5 (devDep) | `tokens.css` + `tokens.ts` 단일 출처, 생성물 커밋 |
 | 지오 | 자체 Mercator + ray casting (`features/map`) | 의존성 0. d3-geo로 바꿔도 `project/invert` 인터페이스는 동일 |
 | 상태 | `useReducer` 1개 (`app/gameReducer.ts`) | 상태 5개, 의존성 0 |
-| 테스트 | Vitest 33개(순수 함수) + Playwright e2e 4개(iPhone 14 뷰포트, Chromium) | 튜닝 회귀 방지 |
+| 테스트 | Vitest 61개(순수 함수 + 카메라 항등·지오메트리·팔레트 인접·토큰 대비) + Playwright e2e 4개(iPhone 14 뷰포트, Chromium + SwiftShader WebGL) | 튜닝·좌표계 회귀 방지 |
 | 배포 | Cloudflare Pages (권장) 또는 GitHub Pages | §10 |
 
 ### 9.2 폴더 (FSD 축소판) — 실제 구조
 
 ```
+design.html               # 디자인 시스템 쇼케이스 (dev 전용, npm run dev → /design)
 src/
-  main.tsx
+  main.tsx                # tokens.css → styles.css 순서로 import
   app/
-    App.tsx             # 스테이지 측정, 레이아웃→투영→화면링 useMemo, 상태 머신 배선, 시트 시프트, 공유
+    App.tsx             # 스테이지 측정, 레이아웃→투영→화면링 useMemo, 상태 머신 배선, 시트 시프트, 공유, data-phase/data-hit
     gameReducer.ts      # Phase 5개 + Shot + Hint, 순수 reducer
     layout.ts           # computeLayout(width,height) → anchor/mapBox/dMax
     makeShot.ts         # 발사 기하 → findRegion 판정 → Shot / replayShot(URL 좌표)
-    styles.css          # 토큰(색·서체)과 모든 스타일 (단일 테마)
+    styles.css          # 앱 레벨 스타일(스테이지·HUD). 토큰은 shared/tokens
+  design/               # /design 쇼케이스 (Design.tsx — 토큰·프리미티브 전 상태)
   features/
     map/
       data/sgg.topo.json   # 시군구 249개 TopoJSON (울릉군 제외)
-      topo.ts              # decodeTopo — TopoJSON → 경위도 링
+      topo.ts              # decodeTopo — polygons([외곽,...구멍], 3D용) + rings(평탄, 판정용)
       projection.ts        # fitMercator — project/invert
-      region.ts            # toScreen, inRing, pointInRegion(even-odd), findRegion(스냅), ringsToPath
+      region.ts            # toScreen, inRing, pointInRegion(even-odd), findRegion(스냅)
       names.ts             # 시도 코드 매핑, 개편 보정, prettyName/fullName
-      MapLayer.tsx         # 정적 SVG (격자 + path 249), hitIndex 하이라이트, shiftY
       index.ts             # REGIONS (모듈 로드 시 1회 디코드)
     shooter/
       physics.ts           # pullToRange, computeShot(바람 rng 주입), flightTime, easeOut, heightAt
       usePull.ts           # Pointer Events 상대 드래그 훅 (setPointerCapture)
-      FxLayer.tsx          # 조준선·게이지·활·비행·궤적·임팩트·핀 + 투명 입력 div (ref로 직접 갱신)
+      aimState.ts          # AimState — mutable 조준 상태 (InputLayer가 쓰고 씬이 읽음)
+      InputLayer.tsx       # 투명 입력 div + usePull + computeShot → onFire
+    scene/                 # three.js 씬 (map·shooter의 순수 함수·타입만 import, 역방향 금지)
+      camera.ts            # orthoCamera — 지면↔화면 항등 매핑 (§4.5)          [test]
+      CameraRig.tsx        # 카메라 적용 + shiftY 댐핑
+      geometry.ts          # polygonToShape, extrudeColored, buildTerrain, outlineGeometry  [test]
+      palette.ts           # SCENE_COLORS(tokens.ts 유일 소비자), provinceVariant  [test]
+      Water.tsx / Terrain.tsx   # 바다 시트·격자 / 249 extrude + 외곽선 + HitRegion
+      ArrowMesh.tsx        # 절차적 화살 지오메트리 (장전·비행·핀·그림자 공용)
+      pose.ts              # apexHeight, flightPose, yawOf                       [test]
+      ribbon.ts / dots.ts  # 궤적 리본 버퍼 / 점선 InstancedMesh 배치
+      Bow.tsx / AimGuide.tsx / Flight.tsx   # 활·시위·장전 / 조준선·조준점·게이지 / 비행·그림자·임팩트·핀·스냅
+      SceneLayer.tsx       # <Canvas frameloop="demand"> 조립, data-ready/data-region-count
     result/
-      ResultSheet.tsx      # 바텀시트 (forwardRef — 높이를 App이 읽음)
+      ResultSheet.tsx      # 바텀시트 내용 (shared/ui Sheet·Button 사용)
       share.ts             # buildShareUrl, parseReplayParams, shareResult(Web Share→클립보드)
       deeplink.ts          # kakaoMapUrl
   shared/
-    params.ts           # PARAMS(튜닝 표) + LAYOUT 상수 — 단일 출처
+    params.ts           # PARAMS(튜닝 표) + LAYOUT + SCENE 상수 — 단일 출처
     geo.ts              # haversineKm, clamp, 타입
-e2e/shoot.spec.ts       # 첫 화면 / 발사→결과→다시 / 데드존 취소 / 공유 URL 재현
-scripts/build-map.sh    # 데이터 파이프라인 (mapshaper)
-docs/DESIGN.md          # 이 문서
+    useReducedMotion.ts # prefers-reduced-motion 훅
+    tokens/             # tokens.json(출처) · tokens.css / tokens.ts(생성물, 커밋) · tokens.test.ts(대비)
+    ui/                 # Button · Sheet · Toast · text.css 프리미티브
+scripts/build-tokens.mjs  # Style Dictionary v5 설정+실행 (npm run tokens:build, prebuild)
+scripts/build-map.sh      # 데이터 파이프라인 (mapshaper)
+e2e/shoot.spec.ts         # 첫 화면 / 발사→결과→다시 / 데드존 취소 / 공유 URL 재현 (data-* 속성 기반)
+docs/DESIGN.md            # 이 문서
 ```
 
-의존 방향: `shared` ← `features/*` ← `app`. features 사이는 타입만 참조한다(`shooter`가 `app/gameReducer`의 `Shot` 타입을 쓰는 것은 예외로 허용 — 화면 전용 컴포넌트).
+의존 방향: `shared` ← `features/*` ← `app`. features 사이는 타입만 참조하되 `scene`은 `map`·`shooter`의 **순수 함수**도 import한다(렌더 조립 계층). `shooter`·`scene`이 `app/gameReducer`의 `Phase`/`Shot` 타입을 쓰는 것은 화면 전용 컴포넌트라 예외로 허용.
 
 ### 9.3 성능 예산
 
-- 초기 로드: HTML+JS+데이터 gzip 후 < 150KB (데모: TopoJSON 177KB raw → gzip ≈ 55KB, 데모 전체 ≈ 65KB).
-- 비행 중 60fps: rAF 콜백에서 setAttribute 4~5회, 레이아웃 트리거 없음.
+- 초기 로드: gzip 후 < 400KB. 실측 v0.2: 앱 청크 ≈ 177KB + three 청크 ≈ 185KB(`manualChunks`로 분리, 배포 간 캐시) ≈ 362KB. (v0.1 SVG 시절 65KB → 3D 채택으로 예산 상향, 2026-09-08 결정.)
+- 비행 중 60fps: `useFrame`에서 화살 위치/회전·그림자·리본 버퍼 갱신, 드로우콜 ≈ 16, 정적 삼각형 ≈ 10만. IDLE·RESULT는 프레임 0(`frameloop="demand"`).
 - 판정 < 5ms (모바일 중급기).
 
 ---
@@ -398,3 +437,4 @@ docs/DESIGN.md          # 이 문서
 |---|---|---|
 | v0.1 | 2026-09-08 | 구현 전 초안. 단일 HTML 데모로 핵심 루프 검증 |
 | v0.1.1 | 2026-09-08 | 이름 "우리 어디가" 확정, Vite+React+TS 이식 반영(§9), 테스트 수치 갱신, 로드맵 1단계 상태 갱신 |
+| v0.2 | 2026-09-08 | 디자인 리뉴얼: 낮·종이지도 라이트 테마, DTCG 토큰 + Style Dictionary, shared/ui 프리미티브, /design 쇼케이스(§4.3). three.js/R3F 3D 씬으로 SVG 지도·연출 대체 — 기울어진 직교 카메라 항등 매핑(§4.5), extrude 지형, 절차적 화살(§5.4). e2e를 data-* 속성 기반으로. 번들 예산 400KB(§9.3) |

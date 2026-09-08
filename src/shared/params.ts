@@ -20,8 +20,12 @@ export interface GameParams {
   /** ms. 비행 시간 (사거리 비례로 tMin..tMax) */
   tMin: number;
   tMax: number;
-  /** 정점에서 화살 확대 비율 */
+  /** 정점에서 화살 확대 비율 (직교 카메라라 원근 확대가 없어 약하게) */
   apexScale: number;
+  /** 정점 높이 / 사거리 — 3D 아치 높이 (30..160 unit로 클램프) */
+  apexRatio: number;
+  /** 꽂힌 화살의 기울기(도) — 비행 마지막 피치도 여기로 수렴 */
+  pinPitchDeg: number;
 }
 
 export const PARAMS: GameParams = {
@@ -34,7 +38,9 @@ export const PARAMS: GameParams = {
   snapKm: 30,
   tMin: 650,
   tMax: 1200,
-  apexScale: 1.4,
+  apexScale: 0.35,
+  apexRatio: 0.22,
+  pinPitchDeg: 62,
 };
 
 /** 레이아웃 상수 (설계서 §4.1) */
@@ -61,4 +67,6 @@ export const SCENE = {
   depth: 8,
   /** 캔버스 DPR 상한 (저사양 Android는 1.5) */
   maxDpr: 2,
+  /** 맞은 시군구가 솟는 높이 */
+  hitLift: 4,
 } as const;
