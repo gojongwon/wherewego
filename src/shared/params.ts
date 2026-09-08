@@ -52,3 +52,13 @@ export const LAYOUT = {
   /** 착지 → 결과 시트까지 지연 */
   resultDelayMs: 420,
 } as const;
+
+/** 3D 씬 상수 */
+export const SCENE = {
+  /** 카메라 피치(도). 클수록 위에서 내려다봄 — 지면 매핑은 항등 유지, 높이 시어만 h·cotθ */
+  pitchDeg: 55,
+  /** 육지 extrude 두께 (world unit = px) */
+  depth: 8,
+  /** 캔버스 DPR 상한 (저사양 Android는 1.5) */
+  maxDpr: 2,
+} as const;

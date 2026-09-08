@@ -3,6 +3,7 @@ import { LAYOUT } from '@/shared/params';
 import { Toast } from '@/shared/ui';
 import { REGIONS, MapLayer, fitMercator, fullName, toScreen } from '@/features/map';
 import { FxLayer, type ShotGeometry } from '@/features/shooter';
+import { SceneLayer } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
@@ -98,6 +99,7 @@ export function App() {
     <div className="stage" ref={stageRef}>
       {layout && projection && screen && (
         <>
+          <SceneLayer width={layout.width} height={layout.height} mapBox={layout.mapBox} shiftY={shiftY} />
           <MapLayer screen={screen} projection={projection} hitIndex={hitIndex} shiftY={shiftY} />
           <FxLayer
             anchor={layout.anchor}
