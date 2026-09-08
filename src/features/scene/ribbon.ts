@@ -48,7 +48,8 @@ export class Ribbon {
     // 스트립 정점 i·2, i·2+1 — 진행 방향에 수직(XZ 평면)으로 ±폭/2. 최신 샘플이 가장 넓고 진하다.
     for (let i = 0; i < n; i++) {
       const k = n > 1 ? i / (n - 1) : 1;
-      this.color.set([r, g, b, ALPHA * k, r, g, b, ALPHA * k], i * 8);
+      const a = ALPHA * Math.sqrt(k); // 머리는 화살에 가리므로 꼬리를 덜 급하게 흐린다
+      this.color.set([r, g, b, a, r, g, b, a], i * 8);
       const px = this.pts[i * 3];
       const py = this.pts[i * 3 + 1];
       const pz = this.pts[i * 3 + 2];
