@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { LAYOUT } from '@/shared/params';
+import { Toast } from '@/shared/ui';
 import { REGIONS, MapLayer, fitMercator, fullName, toScreen } from '@/features/map';
 import { FxLayer, type ShotGeometry } from '@/features/shooter';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
@@ -132,9 +133,7 @@ export function App() {
         onAgain={onAgain}
         onShare={onShare}
       />
-      <div className={toast ? 'toast show' : 'toast'} role="status">
-        {toast}
-      </div>
+      <Toast message={toast} />
     </div>
   );
 }

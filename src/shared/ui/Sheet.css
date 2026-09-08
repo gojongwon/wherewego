@@ -1,0 +1,28 @@
+.sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--sheet-bg);
+  border-top: 1px solid var(--color-border-subtle);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  padding: var(--sheet-pad-top) var(--sheet-pad-x) calc(env(safe-area-inset-bottom, 0px) + var(--space-5));
+  transform: translateY(110%);
+  transition: transform var(--motion-duration-slow) var(--motion-easing-out);
+  box-shadow: var(--sheet-shadow);
+}
+.sheet.show {
+  transform: translateY(0);
+}
+.sheet-grip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sheet-grip);
+  margin: 0 auto var(--space-3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet {
+    transition: none;
+  }
+}

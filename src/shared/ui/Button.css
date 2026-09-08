@@ -1,0 +1,37 @@
+.btn {
+  appearance: none;
+  border: 1px solid var(--button-ghost-border);
+  background: transparent;
+  color: var(--button-ghost-text);
+  font-family: var(--font-family-display);
+  font-size: var(--button-font-size);
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--button-radius);
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: var(--button-height); /* 터치 타깃 (설계서 §10.1) */
+  transition: transform var(--motion-duration-fast);
+}
+.btn-primary {
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
+  border-color: var(--button-primary-bg);
+}
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

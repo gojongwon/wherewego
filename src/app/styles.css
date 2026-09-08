@@ -1,23 +1,13 @@
-/* 설계서 §4.3 비주얼 톤 — 밤바다 위의 지도. 게임 화면이라 단일 테마로 고정. */
+/* 앱 레벨 스타일. 토큰은 src/shared/tokens/tokens.css (자동 생성, 출처 tokens.json). 설계서 §4.3 — 낮·종이지도, 라이트 단일 테마. */
 :root {
-  --sea: #0f2230;
-  --sea-deep: #08151f;
-  --sea-line: #1c3547;
-  --land: #dccfa9;
-  --land-edge: #7a6b4a;
-  --land-hit: #f5b84a;
-  --ink: #f4efe3;
-  --muted: #9db0ba;
-  --dim: #5f7683;
-  --accent: #f5b84a;
-  --hit: #e8613c;
-  --sheet: #16283a;
-  --sheet-edge: #254257;
-  --btn: #f5b84a;
-  --btn-ink: #1a1408;
-  --display: 'Do Hyeon', 'Noto Sans KR', system-ui, sans-serif;
-  --body: 'Noto Sans KR', 'Apple SD Gothic Neo', system-ui, sans-serif;
-  color-scheme: dark;
+  color-scheme: light;
+
+  /* 레거시 별칭 — FxLayer.tsx / MapLayer.tsx(SVG)가 참조. 3D 씬 전환으로 두 파일이 삭제되면 함께 지운다. */
+  --ink: var(--map-arrow-ink);
+  --accent: var(--map-arrow-accent);
+  --hit: var(--map-impact);
+  --land: var(--color-ink-700);
+  --dim: var(--map-pin-miss);
 }
 
 * {
@@ -30,27 +20,28 @@ body,
   margin: 0;
 }
 html {
-  background: var(--sea-deep);
-  color: var(--ink);
-  font-family: var(--body);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-body);
+  line-height: var(--font-line-height-normal);
   -webkit-text-size-adjust: 100%;
 }
 body {
   overscroll-behavior: none;
 }
 
-/* ---------- 스테이지 ---------- */
+/* ---------- 스테이지 (폭·상단 오프셋은 shared/params.ts LAYOUT과 짝) ---------- */
 .stage {
   position: relative;
   width: min(100vw, 430px);
   height: 100dvh;
   margin: 0 auto;
-  background: radial-gradient(120% 90% at 50% 20%, var(--sea) 0%, var(--sea-deep) 100%);
+  background: radial-gradient(120% 90% at 50% 20%, var(--color-bg-surface) 0%, var(--color-bg-canvas) 100%);
   overflow: hidden;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  box-shadow: 0 0 0 1px var(--sea-line);
+  box-shadow: 0 0 0 1px var(--color-border-subtle);
 }
 .layer {
   position: absolute;
@@ -59,7 +50,7 @@ body {
   height: 100%;
   display: block;
   pointer-events: none;
-  transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform var(--motion-duration-slow) var(--motion-easing-out);
 }
 .input-layer {
   position: absolute;
@@ -67,19 +58,19 @@ body {
   cursor: crosshair;
 }
 
-/* ---------- 지도 ---------- */
+/* ---------- 지도 (2D SVG — 3D 씬으로 대체 예정) ---------- */
 .sgg {
-  fill: var(--land);
-  stroke: var(--land-edge);
+  fill: var(--map-land-1);
+  stroke: var(--map-land-edge);
   stroke-width: 0.6;
   stroke-linejoin: round;
-  transition: fill 0.25s;
+  transition: fill var(--motion-duration-base);
 }
 .sgg.hit {
-  fill: var(--land-hit);
+  fill: var(--map-highlight);
 }
 .grid line {
-  stroke: var(--sea-line);
+  stroke: var(--map-grid);
   stroke-width: 0.6;
   fill: none;
 }
@@ -97,17 +88,17 @@ body {
   pointer-events: none;
 }
 .brand {
-  font-family: var(--display);
-  font-size: 22px;
+  font-family: var(--font-family-display);
+  font-size: var(--font-size-xl);
   letter-spacing: 0.02em;
   line-height: 1;
 }
 .brand small {
   display: block;
-  font-family: var(--body);
-  font-size: 11px;
-  color: var(--muted);
-  letter-spacing: 0.08em;
+  font-family: var(--font-family-body);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  letter-spacing: var(--font-tracking-wide);
   margin-top: 5px;
   text-transform: uppercase;
 }
@@ -117,158 +108,32 @@ body {
   right: 0;
   top: calc(env(safe-area-inset-top, 0px) + 64px);
   margin: 0;
-  padding: 0 24px;
+  padding: 0 var(--space-6);
   text-align: center;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
   pointer-events: none;
   text-wrap: balance;
   min-height: 1.5em;
 }
 .hint b {
-  color: var(--accent);
-  font-weight: 500;
+  color: var(--color-text-accent);
+  font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
 .credit {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-2));
   text-align: center;
-  font-size: 10px;
-  color: var(--dim);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
   pointer-events: none;
   letter-spacing: 0.02em;
 }
 
-/* ---------- 결과 시트 ---------- */
-.sheet {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: var(--sheet);
-  border-top: 1px solid var(--sheet-edge);
-  border-radius: 20px 20px 0 0;
-  padding: 14px 20px calc(env(safe-area-inset-bottom, 0px) + 18px);
-  transform: translateY(110%);
-  transition: transform 0.38s cubic-bezier(0.2, 0.8, 0.2, 1);
-  box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
-}
-.sheet.show {
-  transform: translateY(0);
-}
-.grip {
-  width: 36px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--sheet-edge);
-  margin: 0 auto 12px;
-}
-.eyebrow {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  color: var(--muted);
-  text-transform: uppercase;
-}
-.place {
-  font-family: var(--display);
-  font-size: 40px;
-  line-height: 1.05;
-  margin: 4px 0 2px;
-  font-weight: 400;
-  text-wrap: balance;
-}
-.place.miss {
-  color: var(--muted);
-}
-.prov {
-  font-size: 15px;
-  color: var(--accent);
-  font-weight: 500;
-}
-.meta {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 14px;
-  margin: 14px 0 0;
-  font-size: 12.5px;
-}
-.meta dt {
-  margin: 0;
-  color: var(--dim);
-}
-.meta dd {
-  margin: 0;
-  color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-.note {
-  margin: 10px 0 0;
-  font-size: 12.5px;
-  color: var(--accent);
-}
-.actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-}
-.btn {
-  flex: 1;
-  appearance: none;
-  border: 1px solid var(--sheet-edge);
-  background: transparent;
-  color: var(--ink);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 12px 10px;
-  border-radius: 12px;
-  cursor: pointer;
-  text-align: center;
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px; /* 터치 타깃 (설계서 §10.1) */
-}
-.btn.primary {
-  background: var(--btn);
-  color: var(--btn-ink);
-  border-color: var(--btn);
-  flex: 1.4;
-}
-.btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-.btn:active {
-  transform: translateY(1px);
-}
-
-/* ---------- 토스트 / 임팩트 ---------- */
-.toast {
-  position: absolute;
-  left: 50%;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 24px);
-  transform: translate(-50%, 10px);
-  background: var(--ink);
-  color: var(--btn-ink);
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: 999px;
-  opacity: 0;
-  transition: 0.25s;
-  pointer-events: none;
-  max-width: 90%;
-  overflow-wrap: anywhere;
-}
-.toast.show {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
+/* ---------- 임팩트 (SVG 연출 — 3D 씬으로 대체 예정) ---------- */
 @keyframes impact-ring {
   from {
     r: 6;
@@ -281,13 +146,12 @@ body {
 }
 .impact {
   fill: none;
-  stroke: var(--hit);
+  stroke: var(--map-impact);
   stroke-width: 2;
   animation: impact-ring 0.7s ease-out forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sheet,
   .layer {
     transition: none;
   }

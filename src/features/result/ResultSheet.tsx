@@ -1,8 +1,10 @@
-import { forwardRef } from 'react';
+import type { Ref } from 'react';
 import { PARAMS } from '@/shared/params';
+import { Button, Sheet } from '@/shared/ui';
 import { fullName, prettyName, provinceOf, type Region } from '@/features/map';
 import type { Shot } from '@/app/gameReducer';
 import { kakaoMapUrl } from './deeplink';
+import './ResultSheet.css';
 
 interface Props {
   shot: Shot | null;
@@ -10,23 +12,21 @@ interface Props {
   open: boolean;
   onAgain: () => void;
   onShare: () => void;
+  /** App이 높이를 읽어 지도 시프트에 쓴다 */
+  ref?: Ref<HTMLElement>;
 }
 
-/** 결과 바텀시트 (설계서 §4.4). 높이는 App이 ref로 읽어 지도 시프트에 쓴다. */
-export const ResultSheet = forwardRef<HTMLElement, Props>(function ResultSheet(
-  { shot, regions, open, onAgain, onShare },
-  ref,
-) {
+/** 결과 바텀시트 (설계서 §4.4) */
+export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Props) {
   const region = shot?.hit ? regions[shot.hit.index] : null;
   const [lon, lat] = shot?.lonLat ?? [0, 0];
 
   return (
-    <section ref={ref} className={open ? 'sheet show' : 'sheet'} aria-live="polite" aria-hidden={!open}>
-      <div className="grip" />
+    <Sheet ref={ref} open={open}>
       {shot && !region && (
         <>
-          <div className="eyebrow">헛발</div>
-          <h1 className="place miss">바다에 빠졌어요</h1>
+          <div className="t-eyebrow">헛발</div>
+          <h1 className="place t-display miss">바다에 빠졌어요</h1>
           <div className="prov">해안에서 {PARAMS.snapKm}km 넘게 벗어났어요</div>
           <dl className="meta">
             <dt>착지</dt>
@@ -40,8 +40,8 @@ export const ResultSheet = forwardRef<HTMLElement, Props>(function ResultSheet(
       )}
       {shot && region && (
         <>
-          <div className="eyebrow">이번 여행지</div>
-          <h1 className="place" data-testid="place">
+          <div className="t-eyebrow">이번 여행지</div>
+          <h1 className="place t-display" data-testid="place">
             {prettyName(region.name)}
           </h1>
           <div className="prov" data-testid="prov">
@@ -67,20 +67,16 @@ export const ResultSheet = forwardRef<HTMLElement, Props>(function ResultSheet(
         </>
       )}
       <div className="actions">
-        <button className="btn primary" type="button" onClick={onAgain} data-testid="again">
+        <Button variant="primary" onClick={onAgain} data-testid="again">
           다시 쏘기
-        </button>
+        </Button>
         {region && shot && (
           <>
-            <a className="btn" href={kakaoMapUrl(fullName(region), shot.lonLat)} target="_blank" rel="noopener noreferrer">
-              카카오맵
-            </a>
-            <button className="btn" type="button" onClick={onShare}>
-              공유
-            </button>
+            <Button href={kakaoMapUrl(fullName(region), shot.lonLat)}>카카오맵</Button>
+            <Button onClick={onShare}>공유</Button>
           </>
         )}
       </div>
-    </section>
+    </Sheet>
   );
-});
+}
