@@ -64,7 +64,7 @@ export function SceneLayer(props: Props) {
         <Terrain regions={regions} screen={screen} projection={projection} hitIndex={hitIndex} reduced={reduced} />
         <Bow anchor={anchor} aim={aim} phase={phase} />
         <AimGuide anchor={anchor} aim={aim} />
-        <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} reduced={reduced} onFlightEnd={onFlightEnd} />
+        <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} width={width} reduced={reduced} onFlightEnd={onFlightEnd} />
       </Canvas>
     </div>
   );

@@ -27,7 +27,7 @@ npm run dev          # http://localhost:5173 (--host 로 같은 Wi-Fi의 휴대�
 ## 어떻게 동작하나
 
 1. 화면 아무 곳이나 아래로 당기면 활이 그 방향을 향하고 조준선·파워 게이지가 뜹니다 (`features/shooter/usePull.ts`).
-2. 놓는 순간 착지점이 확정됩니다 — 사거리는 당김 길이의 곡선, 여기에 약한 바람(정규분포)이 더해집니다 (`physics.ts`).
+2. 놓는 순간 착지점이 확정됩니다 — 사거리는 당김 길이의 곡선, HUD에 보이는 바람이 밀고, 가끔 비행 중 사건이 한 번 더 꺾습니다 (`physics.ts`, `features/wind`).
 3. 비행은 그 지점으로 가는 연출일 뿐이고, 판정은 이미 끝나 있습니다 (`app/makeShot.ts` → `features/map/region.ts`).
 4. 바다에 떨어지면 30km 이내 해안 시군구로 스냅, 그 밖이면 헛발.
 5. 결과 시트에서 카카오맵 열기 · `?lat=..&lng=..` 링크 공유. 링크로 열면 같은 자리에 꽂힌 상태로 시작합니다.
@@ -53,7 +53,7 @@ IDLE → AIMING → FLYING → LANDED → RESULT → (다시 쏘기) → IDLE
 
 ```
 src/app        상태 머신·레이아웃·화면 조립
-src/features   map(데이터·투영·판정) / shooter(입력·물리) / scene(three.js 3D 씬) / result(시트·공유)
+src/features   map(데이터·투영·판정) / shooter(입력·물리) / wind(가시 바람) / scene(three.js 3D 씬) / result(시트·공유)
 src/shared     params(튜닝 단일 출처) · geo · tokens(디자인 토큰) · ui(Button·Sheet·Toast)
 src/design     /design 쇼케이스 (dev 전용)
 e2e            Playwright 시나리오

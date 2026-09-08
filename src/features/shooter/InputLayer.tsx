@@ -3,7 +3,7 @@ import type { Point } from '@/shared/geo';
 import { PARAMS } from '@/shared/params';
 import type { Phase } from '@/app/gameReducer';
 import type { AimState } from './aimState';
-import { computeShot, pullRatio, pullToRange, type ShotGeometry } from './physics';
+import { computeShot, pullRatio, pullToRange, type EventKind, type ShotGeometry } from './physics';
 import { usePull } from './usePull';
 
 interface Props {
@@ -16,13 +16,28 @@ interface Props {
   /** 당김 비율(0..1)과 취소 구간 여부 — 힌트 텍스트용. 정수 %가 바뀔 때만 */
   onAimMove: (ratio: number, inDeadZone: boolean) => void;
   onAimCancel: () => void;
+  windNow: () => Point;
+  /** dev 전용 사건 강제 */
+  forceEvent?: EventKind;
   onFire: (geometry: ShotGeometry) => void;
   /** 조준 상태가 바뀌었으니 씬을 다시 그려라 (frameloop=demand) */
   onFrame: () => void;
 }
 
 /** 투명 입력 레이어 (설계서 §4.2 3번). 당김 벡터를 AimState로 흘리고 놓는 순간 착지점을 확정한다. */
-export function InputLayer({ anchor, dMax, phase, aim, onAimStart, onAimMove, onAimCancel, onFire, onFrame }: Props) {
+export function InputLayer({
+  anchor,
+  dMax,
+  phase,
+  aim,
+  windNow,
+  forceEvent,
+  onAimStart,
+  onAimMove,
+  onAimCancel,
+  onFire,
+  onFrame,
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastPercent = useRef(-1);
 
@@ -68,7 +83,7 @@ export function InputLayer({ anchor, dMax, phase, aim, onAimStart, onAimMove, on
         onAimCancel();
         return;
       }
-      const geometry = computeShot(anchor, pull, dMax, PARAMS);
+      const geometry = computeShot(anchor, pull, dMax, PARAMS, Math.random, windNow(), forceEvent);
       aim.active = false;
       aim.dir = geometry.dir;
       onFrame();

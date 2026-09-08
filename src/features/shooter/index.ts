@@ -9,5 +9,12 @@ export {
   easeOut,
   heightAt,
   gaussian,
+  sampleEvent,
+  eventRateForWind,
+  parseEventParam,
+  EVENT_KINDS,
+  EVENT_LABEL,
   type ShotGeometry,
+  type FlightEvent,
+  type EventKind,
 } from './physics';

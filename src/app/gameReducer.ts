@@ -12,8 +12,12 @@ export interface Shot {
   hit: Hit | null;
   /** 결과 좌표 (스냅됐으면 스냅 지점) */
   lonLat: LonLat;
-  /** 조준점 대비 빗나간 거리 km (바람) */
+  /** 조준점 대비 빗나간 거리 km (바람+사건) */
   missKm: number;
+  /** HUD 바람이 민 거리 km */
+  driftKm: number;
+  /** 사건이 튕긴 거리 km */
+  kickKm: number;
   /** 공유 URL로 재현된 샷 — 비행·임팩트 없이 꽂힌 상태로 시작 */
   replay: boolean;
 }

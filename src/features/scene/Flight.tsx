@@ -3,13 +3,14 @@ import { invalidate, useFrame } from '@react-three/fiber';
 import { CircleGeometry, type InstancedMesh, type Mesh, RingGeometry } from 'three';
 import type { Point } from '@/shared/geo';
 import { PARAMS, SCENE } from '@/shared/params';
-import { flightTime } from '@/features/shooter';
+import { easeOut, flightTime, heightAt } from '@/features/shooter';
 import type { Phase, Shot } from '@/app/gameReducer';
 import { ARROW_GEOMETRY, ARROW_LENGTH, ARROW_MATERIAL, ARROW_SHADOW_MATERIAL } from './ArrowMesh';
 import { DOT_GEOMETRY, MAX_DOTS, OVERLAY_Y, layoutDots, overlayMaterial } from './dots';
 import { apexHeight, flightPose, yawOf } from './pose';
 import { SCENE_COLORS } from './palette';
 import { Ribbon, RIBBON_MATERIAL } from './ribbon';
+import { EventActor } from './EventActor';
 
 const IMPACT_MS = 700;
 const IMPACT_RING = new RingGeometry(0.93, 1, 48).rotateX(-Math.PI / 2); // scale = 반지름
@@ -26,6 +27,7 @@ interface Props {
   shot: Shot | null;
   anchor: Point;
   dMax: number;
+  width: number;
   reduced: boolean;
   onFlightEnd: () => void;
 }
@@ -34,7 +36,7 @@ interface Props {
  * 비행 화살 + 그림자 + 궤적 리본 + 임팩트 링 + 핀(=같은 화살 메시) + 조준점 잔상 + 스냅 점선.
  * 착지점은 이미 확정(설계서 §5.4) — 여기서는 그 지점으로 가는 연출만. 프레임 갱신은 전부 ref.
  */
-export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Props) {
+export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd }: Props) {
   const arrow = useRef<Mesh>(null);
   const shadow = useRef<Mesh>(null);
   const trail = useRef<Mesh>(null);
@@ -42,7 +44,7 @@ export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Prop
   const impactMaterial = useMemo(() => overlayMaterial(SCENE_COLORS.impact, 0.9), []);
   const ribbon = useMemo(() => new Ribbon(), []);
   useEffect(() => () => ribbon.dispose(), [ribbon]);
-  const fly = useRef<{ t0: number; T: number; apexH: number } | null>(null);
+  const fly = useRef<{ t0: number; T: number; apexH: number; hitEvent: boolean } | null>(null);
   const impactT0 = useRef<number | null>(null);
 
   // 상태 전환에 따른 1회성 배치. 비행 자체는 useFrame.
@@ -61,7 +63,13 @@ export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Prop
     }
     if (phase === 'FLYING') {
       const d = shot.geometry.d;
-      fly.current = { t0: performance.now(), T: flightTime(d, dMax, PARAMS), apexH: apexHeight(d, PARAMS.apexRatio) };
+      const extra = shot.geometry.event ? PARAMS.events.extraMs : 0;
+      fly.current = {
+        t0: performance.now(),
+        T: flightTime(d, dMax, PARAMS) + extra,
+        apexH: apexHeight(d, PARAMS.apexRatio),
+        hitEvent: false,
+      };
       ribbon.reset();
       a.visible = s.visible = true;
       t.visible = !reduced;
@@ -93,7 +101,12 @@ export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Prop
     const f = fly.current;
     if (f && shot && arrow.current && shadow.current) {
       const tau = reduced ? 1 : Math.min(1, (now - f.t0) / f.T);
-      const pose = flightPose(tau, anchor, shot.geometry.landing, f.apexH, PIN_PITCH);
+      const pose = flightPose(tau, anchor, shot.geometry.landing, f.apexH, PIN_PITCH, shot.geometry.event);
+      const ev = shot.geometry.event;
+      if (ev && !f.hitEvent && tau >= ev.at) {
+        f.hitEvent = true;
+        navigator.vibrate?.(15);
+      }
       const a = arrow.current;
       a.position.set(pose.x, pose.y, pose.z);
       a.rotation.set(0, pose.yaw, pose.pitch, 'YZX');
@@ -131,6 +144,18 @@ export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Prop
 
   const landed = shot !== null && (phase === 'LANDED' || phase === 'RESULT');
   const pin = shot ? (shot.hit ? shot.hit.point : shot.geometry.landing) : null;
+  const ev = shot?.geometry.event;
+  const pe = ev && shot
+    ? (() => {
+        const { landing } = shot.geometry;
+        const L0: Point = [landing[0] - ev.kick[0], landing[1] - ev.kick[1]];
+        const e = easeOut(ev.at);
+        return {
+          Pe: [anchor[0] + (L0[0] - anchor[0]) * e, anchor[1] + (L0[1] - anchor[1]) * e] as Point,
+          h: apexHeight(shot.geometry.d, PARAMS.apexRatio) * heightAt(ev.at),
+        };
+      })()
+    : null;
 
   return (
     <>
@@ -144,6 +169,9 @@ export function Flight({ phase, shot, anchor, dMax, reduced, onFlightEnd }: Prop
         position={shot ? [shot.geometry.landing[0], OVERLAY_Y, shot.geometry.landing[1]] : [0, 0, 0]}
         visible={false}
       />
+      {phase === 'FLYING' && ev && pe && !reduced && (
+        <EventActor event={ev} Pe={pe.Pe} heightAtPe={pe.h} stageW={width} flyRef={fly} />
+      )}
       {landed && shot && pin && (
         <>
           {!shot.replay && (

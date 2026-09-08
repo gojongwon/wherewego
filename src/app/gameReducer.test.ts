@@ -3,10 +3,12 @@ import { gameReducer, initialState, type Shot } from './gameReducer';
 
 const shot: Shot = {
   id: 1,
-  geometry: { dir: [0, -1], d: 300, aim: [195, 374], wind: [0, 0], landing: [195, 374] },
+  geometry: { dir: [0, -1], d: 300, aim: [195, 374], wind: [0, 0], drift: [0, 0], event: null, landing: [195, 374] },
   hit: null,
   lonLat: [127, 36],
   missKm: 0,
+  driftKm: 0,
+  kickKm: 0,
   replay: false,
 };
 

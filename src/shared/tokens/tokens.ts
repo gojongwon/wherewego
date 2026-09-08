@@ -137,6 +137,12 @@ export const tokens = {
     },
     "impact": "#c9432f",
     "pin-miss": "#75634f",
+    "actor": {
+      "plane": "#fffcf3",
+      "finger": "#e8b89a",
+      "gull": "#2b2118",
+      "gust": "#b3a692"
+    },
     "shadow": {
       "color": "#2b2118",
       "opacity": 0.25

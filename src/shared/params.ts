@@ -2,6 +2,30 @@
  * 튜닝 파라미터 — 단일 출처. 설계서 §5.5 표와 1:1.
  * 값을 바꾸면 물리(shooter/physics.ts)와 판정(map/region.ts)이 함께 따라간다.
  */
+export interface WindParams {
+  /** px. 끝까지 쐈을 때(d=dMax) 밀리는 상한 */
+  maxPx: number;
+  /** 사거리 대비 잔여 난수 σ (HUD에 안 보이는 아주 작은 흔들림) */
+  residualSigma: number;
+  /** 초. 각도·세기 주기 3개 (무리수 비율 → 반복 안 함) */
+  periodsSec: readonly [number, number, number];
+}
+
+export interface EventParams {
+  /** 무풍일 때 발사당 사건 확률. 바람이 셀수록 rateWindy로 내려간다 */
+  rate: number;
+  /** 최대 바람일 때 사건 확률 */
+  rateWindy: number;
+  /** 비행 τ에서 사건이 일어나는 구간 */
+  atRange: readonly [number, number];
+  /** ms. 사건이 있으면 비행 시간에 더함 */
+  extraMs: number;
+  /** 종류별 킥 크기 / 사거리 */
+  kick: { plane: number; finger: number; gull: number; gust: number };
+  /** |kick| 상한 / 사거리 */
+  maxKick: number;
+}
+
 export interface GameParams {
   /** px. 이 미만으로 당기고 놓으면 취소 */
   deadZone: number;
@@ -13,8 +37,8 @@ export interface GameParams {
   dMinPx: number;
   /** px. 지도 북단 위로 넘어갈 수 있는 여유 */
   overshootPx: number;
-  /** 사거리 대비 바람 편차 (정규분포 σ). 이 스케일에서 0.03 ≈ 15~20km */
-  windSigma: number;
+  wind: WindParams;
+  events: EventParams;
   /** km. 바다 착지 시 가장 가까운 해안 시군구로 스냅하는 허용 거리 */
   snapKm: number;
   /** ms. 비행 시간 (사거리 비례로 tMin..tMax) */
@@ -34,7 +58,15 @@ export const PARAMS: GameParams = {
   gamma: 1.2,
   dMinPx: 50,
   overshootPx: 40,
-  windSigma: 0.03,
+  wind: { maxPx: 60, residualSigma: 0.01, periodsSec: [7, 2.9, 5.3] },
+  events: {
+    rate: 0.55,
+    rateWindy: 0.1,
+    atRange: [0.40, 0.52],
+    extraMs: 800,
+    kick: { plane: 0.09, finger: 0.07, gull: 0.06, gust: 0.08 },
+    maxKick: 0.12,
+  },
   snapKm: 30,
   tMin: 650,
   tMax: 1200,
@@ -57,6 +89,8 @@ export const LAYOUT = {
   stageMaxWidth: 430,
   /** 착지 → 결과 시트까지 지연 */
   resultDelayMs: 420,
+  /** 이 높이 미만이면 하단 당김 공간을 줄여 지도를 키운다 (폰·짧은 창) */
+  compactBelow: 1000,
 } as const;
 
 /** 3D 씬 상수 */

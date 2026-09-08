@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
-import { LAYOUT } from '@/shared/params';
+import { LAYOUT, PARAMS } from '@/shared/params';
+import { haversineKm } from '@/shared/geo';
 import { Toast } from '@/shared/ui';
 import { REGIONS, fitMercator, fullName, toScreen } from '@/features/map';
-import { InputLayer, createAimState, type ShotGeometry } from '@/features/shooter';
+import { InputLayer, createAimState, parseEventParam, EVENT_LABEL, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
+import { WindGauge, newRound, windAt } from '@/features/wind';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
 import { makeShot, replayShot } from './makeShot';
@@ -15,17 +17,20 @@ export function App() {
   const [state, dispatch] = useReducer(gameReducer, initialState);
   const phaseRef = useRef(state.phase);
   phaseRef.current = state.phase;
+  const [round, setRound] = useState(newRound);
+  const [forceEvent] = useState(() => (import.meta.env.DEV ? parseEventParam(location.search) : undefined));
   // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
   const [aim] = useState(createAimState);
 
   // ---- 스테이지 크기: IDLE에서만 반영 (연출 중 레이아웃 변경 금지, 설계서 §7)
-  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  const [size, setSize] = useState<{ w: number; h: number; safeTop: number } | null>(null);
   useEffect(() => {
     const el = stageRef.current;
     if (!el) return;
     const measure = () => {
       if (phaseRef.current !== 'IDLE') return;
-      setSize({ w: el.clientWidth, h: el.clientHeight });
+      const safeTop = parseFloat(getComputedStyle(el).getPropertyValue('--safe-top')) || 0;
+      setSize({ w: el.clientWidth, h: el.clientHeight, safeTop });
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -34,7 +39,7 @@ export function App() {
   }, []);
 
   // ---- 레이아웃 → 투영 → 화면좌표 링 (크기 바뀔 때만)
-  const layout = useMemo(() => (size ? computeLayout(size.w, size.h) : null), [size]);
+  const layout = useMemo(() => (size ? computeLayout(size.w, size.h, size.safeTop) : null), [size]);
   const projection = useMemo(() => (layout ? fitMercator(REGIONS, layout.mapBox) : null), [layout]);
   const screen = useMemo(() => (projection ? toScreen(REGIONS, projection) : null), [projection]);
 
@@ -83,6 +88,7 @@ export function App() {
   );
   const onAgain = useCallback(() => {
     dispatch({ type: 'RESET' });
+    setRound(newRound());
     if (location.search) history.replaceState(null, '', location.pathname);
   }, []);
   const onShare = useCallback(async () => {
@@ -90,12 +96,23 @@ export function App() {
     if (!shot?.hit) return;
     const region = REGIONS[shot.hit.index];
     const url = buildShareUrl(shot.lonLat);
-    const outcome = await shareResult({ title: '우리 어디가', text: `이번 여행지는 ${fullName(region)}! 🏹`, url });
+    const ev = shot.geometry.event;
+    const text = `이번 여행지는 ${fullName(region)}! 🏹${ev ? ` (${EVENT_LABEL[ev.kind]} 맞고도)` : ''}`;
+    const outcome = await shareResult({ title: '우리 어디가', text, url });
     if (outcome === 'copied') setToast('링크를 복사했어요');
     else if (outcome === 'failed') setToast(url);
   }, [state.shot]);
 
   const hitIndex = state.shot?.hit && state.phase !== 'FLYING' ? state.shot.hit.index : null;
+  const kmPerPx = useMemo(() => {
+    if (!projection || !layout) return 1;
+    const a = layout.anchor;
+    return haversineKm(projection.invert(a), projection.invert([a[0] + 100, a[1]])) / 100;
+  }, [projection, layout]);
+  const windNow = useCallback(
+    () => windAt(round.seed, performance.now() - round.t0, PARAMS.wind),
+    [round],
+  );
 
   return (
     <div
@@ -103,6 +120,7 @@ export function App() {
       ref={stageRef}
       data-phase={state.phase}
       data-hit={hitIndex !== null ? REGIONS[hitIndex].code : ''}
+      data-compact={layout?.compact ? '1' : '0'}
     >
       {layout && projection && screen && (
         <>
@@ -127,6 +145,8 @@ export function App() {
             dMax={layout.dMax}
             phase={state.phase}
             aim={aim}
+            windNow={windNow}
+            forceEvent={forceEvent}
             onAimStart={() => dispatch({ type: 'AIM_START' })}
             onAimMove={(ratio, inDeadZone) => dispatch({ type: 'AIM_MOVE', ratio, inDeadZone })}
             onAimCancel={() => dispatch({ type: 'AIM_CANCEL' })}
@@ -142,6 +162,13 @@ export function App() {
         <div className="brand">
           우리 어디가<small>Where we go · v0.1</small>
         </div>
+        {layout && (
+          <WindGauge
+            round={round}
+            kmPerPx={kmPerPx}
+            active={state.phase === 'IDLE' || state.phase === 'AIMING'}
+          />
+        )}
       </header>
       <p className="hint" data-testid="hint">
         <HintText hint={state.hint} />

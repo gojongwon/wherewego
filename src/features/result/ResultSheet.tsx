@@ -2,6 +2,7 @@ import type { Ref } from 'react';
 import { PARAMS } from '@/shared/params';
 import { Button, Sheet } from '@/shared/ui';
 import { fullName, prettyName, provinceOf, type Region } from '@/features/map';
+import { EVENT_LABEL } from '@/features/shooter';
 import type { Shot } from '@/app/gameReducer';
 import { kakaoMapUrl } from './deeplink';
 import './ResultSheet.css';
@@ -34,7 +35,15 @@ export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Prop
               {lat.toFixed(3)}, {lon.toFixed(3)}
             </dd>
             <dt>바람</dt>
-            <dd>조준점에서 {shot.missKm.toFixed(1)}km 빗나감</dd>
+            <dd>바람에 {shot.driftKm.toFixed(1)}km 밀림</dd>
+            {shot.geometry.event && (
+              <>
+                <dt>사건</dt>
+                <dd>
+                  {EVENT_LABEL[shot.geometry.event.kind]}에 맞아 {shot.kickKm.toFixed(1)}km 튕김
+                </dd>
+              </>
+            )}
           </dl>
         </>
       )}
@@ -55,7 +64,15 @@ export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Prop
             {!shot.replay && (
               <>
                 <dt>바람</dt>
-                <dd>조준점에서 {shot.missKm.toFixed(1)}km 빗나감</dd>
+                <dd>바람에 {shot.driftKm.toFixed(1)}km 밀림</dd>
+                {shot.geometry.event && (
+                  <>
+                    <dt>사건</dt>
+                    <dd>
+                      {EVENT_LABEL[shot.geometry.event.kind]}에 맞아 {shot.kickKm.toFixed(1)}km 튕김
+                    </dd>
+                  </>
+                )}
               </>
             )}
             <dt>코드</dt>

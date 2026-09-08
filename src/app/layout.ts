@@ -11,18 +11,24 @@ export interface StageLayout {
   mapBox: Box;
   /** 최대 사거리 px — 앵커에서 지도 북단 + overshoot */
   dMax: number;
+  compact: boolean;
 }
 
-/** 설계서 §4.1 와이어프레임의 수치화. 순수 함수 — 테스트 가능. */
-export function computeLayout(width: number, height: number): StageLayout {
-  const anchor: Point = [width / 2, height - LAYOUT.anchorFromBottom];
-  const mapBottom = anchor[1] - LAYOUT.mapBottomGap;
+/** 짧은 화면에서는 하단 활 공간을 줄여 지도를 키운다. safeTop은 노치·상태바. */
+export function computeLayout(width: number, height: number, safeTop = 0): StageLayout {
+  const compact = height < LAYOUT.compactBelow;
+  const mapTop = (compact ? 72 : LAYOUT.mapTop) + safeTop;
+  const fromBottom = compact ? 112 : LAYOUT.anchorFromBottom;
+  const gap = compact ? 22 : LAYOUT.mapBottomGap;
+  const pad = compact ? 12 : LAYOUT.mapPad;
+  const anchor: Point = [width / 2, height - fromBottom];
+  const mapBottom = anchor[1] - gap;
   const mapBox: Box = {
-    x: LAYOUT.mapPad,
-    y: LAYOUT.mapTop + LAYOUT.mapPad / 2,
-    width: width - LAYOUT.mapPad * 2,
-    height: mapBottom - LAYOUT.mapTop - LAYOUT.mapPad,
+    x: pad,
+    y: mapTop + pad / 2,
+    width: width - pad * 2,
+    height: mapBottom - mapTop - pad,
   };
-  const dMax = anchor[1] - LAYOUT.mapTop + PARAMS.overshootPx;
-  return { width, height, anchor, mapBox, dMax };
+  const dMax = anchor[1] - mapTop + PARAMS.overshootPx;
+  return { width, height, anchor, mapBox, dMax, compact };
 }

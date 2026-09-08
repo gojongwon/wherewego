@@ -57,6 +57,7 @@
   --motion-duration-base: 250ms;
   --motion-duration-slow: 380ms;
   --motion-easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --map-actor-finger: #e8b89a;
   --map-shadow-opacity: 0.25;
   --button-height: 44px; /** 터치 타깃 (설계서 §10.1) */
   --color-bg-canvas: var(--color-paper-100);
@@ -90,6 +91,9 @@
   --map-arrow-accent: var(--color-orange-500);
   --map-impact: var(--color-stamp-500);
   --map-pin-miss: var(--color-ink-500);
+  --map-actor-plane: var(--color-paper-50);
+  --map-actor-gull: var(--color-ink-900);
+  --map-actor-gust: var(--color-ink-300);
   --map-shadow-color: var(--color-ink-900);
   --sheet-radius: var(--radius-lg);
   --sheet-shadow: var(--shadow-lift);

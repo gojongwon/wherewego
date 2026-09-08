@@ -2,7 +2,7 @@
 
 | 항목 | 내용 |
 |---|---|
-| 문서 상태 | v0.2 — 디자인 리뉴얼(낮·종이지도)·three.js 3D 전환·디자인 토큰 반영 (v0.1.1: MVP 스캐폴드, v0.1: 구현 전 초안) |
+| 문서 상태 | v0.3 — 가시 바람(HUD)·비행 사건 액터 (v0.2: 디자인 리뉴얼·3D 전환, v0.1.1: MVP 스캐폴드, v0.1: 구현 전 초안) |
 | 작성일 | 2026-09-08 |
 | 대상 | 모바일 웹 (세로), 정적 호스팅 (GitHub Pages / Cloudflare Pages) |
 | 스택 | Vite + React + TypeScript, three.js/React Three Fiber 3D 씬(기울어진 직교 카메라), DTCG 디자인 토큰(Style Dictionary), 외부 지도 API 없음 |
@@ -24,7 +24,7 @@
 
 1. **한 손, 세로, 한 제스처.** 조준부터 발사까지 손가락 하나로 끝난다. 버튼을 먼저 누르는 단계가 없다.
 2. **한 판 10초.** 당기기 1~2초, 비행 1초, 결과 확인 수 초. 반복해서 쏘고 싶어야 한다.
-3. **조준 반, 운 반.** 당긴 대로 날아가되 착지 직전 바람이 조금 흔든다. 실력 게임도, 완전한 뽑기도 아니다.
+3. **조준 반, 운 반.** 당긴 대로 날아가되 HUD에 보이는 바람이 밀고, 가끔 비행 중 사건(종이비행기·손가락·갈매기·돌풍)이 한 번 더 꺾는다. 바람은 실력이고 사건은 운이다.
 4. **링크 하나로 공유.** 서버 없이 URL만으로 결과가 재현된다.
 5. **재미는 파라미터 튜닝에서 온다.** 규칙을 늘리기보다 사거리 곡선·바람·스냅 거리를 조절한다.
 
@@ -77,7 +77,7 @@ IDLE ──pointerdown──▶ AIMING ──pointerup(|p|≥deadZone)──▶ 
 
 ```
 ┌──────────────────────────────┐  0
-│ 우리 어디가          (브랜드)   │  safe-area + 14
+│ 우리 어디가          ↗ 18km  │  safe-area + 14  (HUD 바람 게이지)
 │      힌트 텍스트 (상태별)      │  ~64
 ├──────────────────────────────┤  96   ← mapTop
 │                              │
@@ -101,7 +101,7 @@ IDLE ──pointerdown──▶ AIMING ──pointerup(|p|≥deadZone)──▶ 
 
 1. `SceneLayer` (three.js Canvas, `features/scene`) — 바다 시트·1° 격자, 249 시군구 extrude 지형(드로우콜 1)+외곽선, 활·시위·장전 화살, 조준선(점선)·조준점·게이지, 비행 화살·그림자·궤적 리본, 임팩트·핀·스냅 점선. **`frameloop="demand"`** — IDLE에서는 프레임 0, 포인터/애니메이션이 `invalidate()`로 프레임을 요청한다. 프레임 단위 갱신은 `useFrame` + ref (React 리렌더 없음).
 2. `InputLayer` (div, `features/shooter`) — 입력 전용 투명 레이어. `touch-action: none`, `setPointerCapture`. 당김을 mutable `AimState`에 쓰고 씬(Bow·AimGuide)이 프레임마다 읽는다.
-3. HUD(브랜드, 힌트) — `pointer-events: none`.
+3. HUD(브랜드, 바람 게이지, 힌트) — `pointer-events: none`. 바람 게이지는 DOM(rAF), 캔버스는 IDLE 프레임 0.
 4. 결과 시트(bottom sheet, `shared/ui/Sheet`) — 버튼만 인터랙티브. 시트가 착지점을 가리면 **카메라**를 shiftY만큼 이동한다(`translateY(-shiftY)`와 등가).
 
 ### 4.3 비주얼 톤
@@ -124,7 +124,7 @@ IDLE ──pointerdown──▶ AIMING ──pointerup(|p|≥deadZone)──▶ 
 | 아이브로 | "이번 여행지" / 헛발이면 "헛발" |
 | 지역명 | 시군구 (Jua 40px, `.t-display`). `수원시장안구` → `수원시 장안구`로 표시 |
 | 시/도 | 강조색. 코드 앞 2자리 기준 + 예외(군위군→대구) |
-| 메타 | 좌표(소수 4자리), 바람(조준점 대비 빗나간 km), 행정코드 |
+| 메타 | 좌표(소수 4자리), 바람(HUD 바람이 민 km), 사건(있으면 튕긴 km), 행정코드 |
 | 노트 | 스냅됐을 때 "바다에 떨어졌지만 N km 옆 해안으로 붙였어요" |
 | 액션 | **다시 쏘기**(primary) · 카카오맵(딥링크) · 공유(Web Share → 클립보드 폴백) |
 
@@ -149,14 +149,23 @@ aim = anchor + d · p̂
 
 데드존 경계가 정확히 `dMin`(제주 바로 아래)에 대응하도록 데드존을 뺀 구간을 정규화한다. 이렇게 하지 않으면 제주 구간이 데드존 안에 들어가 사실상 도달 불가가 된다(데모에서 실제로 겪은 문제).
 
-### 5.3 바람 (약한 랜덤)
+### 5.3 바람 (가시·실시간)
+
+라운드마다 시드 `Round = { seed, t0 }`. HUD가 `windAt(seed, now−t0)`을 rAF로 표시하고, 놓는 순간의 값이 착지에 적용된다. 같은 seed면 같은 곡선(순수 함수, mulberry32).
 
 ```
-wind = (N(0,1)·σ·d, N(0,1)·σ·d)     // 정규분포, σ는 사거리 대비 비율
-landing = aim + wind
+θ(t) = θ0 + 0.6·sin(2πt/T1+φ1) + 0.25·sin(2πt/T2+φ2)
+m(t) = maxPx · (0.5 + 0.5·sin(2πt/T3+φ3)) · (0.6 + 0.4·s0)     // 0..maxPx
+wind = (m·cosθ, m·sinθ)                                        // "끝까지 쏘면 밀리는 px"
+drift = wind · (d / dMax)
+residual = (N(0,1)·residualSigma·d, …)                         // HUD에 안 보이는 잔여
+event = sampleEvent(..., rate = lerp(rate, rateWindy, |wind|/maxPx))  // 무풍 55% → 최대풍 10%
+landing = aim + drift + residual + (event?.kick ?? 0)
 ```
 
-이 스케일(지도 높이 ≈ 570px ≈ 600km)에서 1px ≈ 1.05km. σ=0.03이면 사거리 500px 기준 σ≈15px≈16km. 시군구 폭이 20~40km이므로 "조준한 곳 아니면 옆 동네" 정도의 흔들림이 된다.
+`periodsSec = [7, 2.9, 5.3]`(무리수 비율 → 반복 안 함). 조준 점선은 무풍 경로 — 보정은 플레이어 몫. 게이지는 IDLE·AIMING에서만 움직이고, 놓은 뒤 그 순간의 바람에 멈춘다.
+
+이 스케일에서 1px ≈ 1.05km. `maxPx=60`이면 끝까지 쐈을 때 최대 ≈63km. 잔여 σ=0.01은 사거리 500px 기준 ≈5px≈5km. 사건이 없을 확률은 바람이 셀수록 올라간다(무풍일 때 사건이 더 잘 난다).
 
 ### 5.4 비행 연출 (착지점은 이미 확정)
 
@@ -182,6 +191,13 @@ pitch = max(atan2(vy, v수평), −pinPitch)     // easeOut'(1)=0 → 마지막�
 
 그림자는 같은 화살 메시를 지면(오버레이 높이)에 납작하게 깔고, 궤적은 48샘플 리본(최신이 넓고 진함). 직교 카메라라 원근 확대가 없어 `apexScale`은 0.35로 낮췄다. 핀은 비행 화살 메시 그대로 스냅 지점에 `−pinPitch`로 꽂힌다(맞으면 솟은 시군구 윗면 높이).
 
+사건이 있으면 궤적이 `at`에서 꺾인다. `L0 = landing − kick`, `τ < at`는 목표 L0, 이후 `Pe → landing`. 비행 시간 `T += extraMs`. 액터(종이비행기·손가락·갈매기·돌풍)는 `at` 전후 창에서만 보이고, `prefers-reduced-motion`이면 생략(문구만).
+
+```
+Pe = anchor + (L0−anchor)·easeOut(at)
+τ ≥ at : u = (τ−at)/(1−at) ; pos = Pe + (landing−Pe)·easeOut(u)
+```
+
 ### 5.5 튜닝 파라미터 (데모 v0.1 값)
 
 | 이름 | 값 | 의미 | 조절 방향 |
@@ -191,14 +207,22 @@ pitch = max(atan2(vy, v수평), −pinPitch)     // easeOut'(1)=0 → 마지막�
 | `gamma` | 1.2 | 당김→사거리 곡선 지수 | ↑ 근거리 해상도↑, 북부 압축 |
 | `dMinPx` | 50 px | 데드존 경계에서의 사거리 | 제주 남단 바로 아래 |
 | `overshootPx` | 40 px | 지도 북단 위 여유 | ↑ 북쪽 헛발 증가 |
-| `windSigma` | 0.03 | 바람 σ / 사거리 | ↑ 뽑기 성격 강화 |
+| `wind.maxPx` | 60 px | 끝까지 쐈을 때 바람 상한 | ↑ 뽑기·보정 폭 |
+| `wind.residualSigma` | 0.01 | 잔여 난수 σ / 사거리 | ↑ 숨은 흔들림 |
+| `wind.periodsSec` | 7 / 2.9 / 5.3 | 각도·세기 주기(초) | 무리수 비율 유지 |
+| `events.rate` | 0.55 | 무풍일 때 사건 확률 | ↑ 잔잔할수록 사건 |
+| `events.rateWindy` | 0.10 | 최대 바람일 때 사건 확률 | ↓ 강풍에 사건 억제 |
+| `events.atRange` | 0.40..0.52 | 사건 τ 구간 | 정점 근처 |
+| `events.extraMs` | 800 | 사건 시 비행 가산 | ↑ 액터가 오래 보임 |
+| `events.kick.*` | 0.06..0.09 | 종류별 킥 / 사거리 | |
+| `events.maxKick` | 0.12 | 킥 상한 / 사거리 | |
 | `snapKm` | 30 km | 바다 착지 시 스냅 허용 | ↑ 헛발 감소 |
 | `tMin / tMax` | 650 / 1200 ms | 비행 시간 | 느리면 지루, 빠르면 안 보임 |
 | `apexScale` | 0.35 | 정점 확대 (직교라 약하게) | 높이감 보조 |
 | `apexRatio` | 0.22 | 정점 높이 / 사거리 (30..160 클램프) | ↑ 아치 높이 |
 | `pinPitchDeg` | 62 | 꽂힌 화살 기울기 | 비행 마지막 피치가 여기로 수렴 |
 
-**알려진 트레이드오프:** 제주는 전체 사거리의 약 5%라 당김 폭 약 11px 구간에 해당한다. 어느 시군구든 3~5%라 이는 구조적이며, 바람 σ가 이를 압도한다. 앵커를 더 내리면(지도 축소) 제주 구간이 넓어진다. 플레이테스트 후 결정.
+**알려진 트레이드오프:** 제주는 전체 사거리의 약 5%라 당김 폭 약 11px 구간에 해당한다. 어느 시군구든 3~5%라 이는 구조적이며, 바람·사건이 이를 압도한다. 앵커를 더 내리면(지도 축소) 제주 구간이 넓어진다. 플레이테스트 후 결정.
 
 ---
 
@@ -309,10 +333,13 @@ src/
       names.ts             # 시도 코드 매핑, 개편 보정, prettyName/fullName
       index.ts             # REGIONS (모듈 로드 시 1회 디코드)
     shooter/
-      physics.ts           # pullToRange, computeShot(바람 rng 주입), flightTime, easeOut, heightAt
+      physics.ts           # pullToRange, computeShot(바람·사건), sampleEvent, flightTime, easeOut, heightAt
       usePull.ts           # Pointer Events 상대 드래그 훅 (setPointerCapture)
       aimState.ts          # AimState — mutable 조준 상태 (InputLayer가 쓰고 씬이 읽음)
       InputLayer.tsx       # 투명 입력 div + usePull + computeShot → onFire
+    wind/
+      wind.ts              # windAt(seed, t), newRound                         [test]
+      WindGauge.tsx        # HUD 바람 화살 + km (rAF, setState 없음)
     scene/                 # three.js 씬 (map·shooter의 순수 함수·타입만 import, 역방향 금지)
       camera.ts            # orthoCamera — 지면↔화면 항등 매핑 (§4.5)          [test]
       CameraRig.tsx        # 카메라 적용 + shiftY 댐핑
@@ -320,9 +347,11 @@ src/
       palette.ts           # SCENE_COLORS(tokens.ts 유일 소비자), provinceVariant  [test]
       Water.tsx / Terrain.tsx   # 바다 시트·격자 / 249 extrude + 외곽선 + HitRegion
       ArrowMesh.tsx        # 절차적 화살 지오메트리 (장전·비행·핀·그림자 공용)
-      pose.ts              # apexHeight, flightPose, yawOf                       [test]
+      pose.ts              # apexHeight, flightPose(2구간), yawOf               [test]
+      actors.ts            # actorPose — 사건 액터 동선                         [test]
+      EventActor.tsx       # 종이비행기·손가락·갈매기·돌풍 절차적 메시
       ribbon.ts / dots.ts  # 궤적 리본 버퍼 / 점선 InstancedMesh 배치
-      Bow.tsx / AimGuide.tsx / Flight.tsx   # 활·시위·장전 / 조준선·조준점·게이지 / 비행·그림자·임팩트·핀·스냅
+      Bow.tsx / AimGuide.tsx / Flight.tsx   # 활·시위·장전 / 조준선·조준점·게이지 / 비행·그림자·임팩트·핀·스냅·액터
       SceneLayer.tsx       # <Canvas frameloop="demand"> 조립, data-ready/data-region-count
     result/
       ResultSheet.tsx      # 바텀시트 내용 (shared/ui Sheet·Button 사용)
@@ -381,7 +410,7 @@ docs/DESIGN.md            # 이 문서
 **포함**
 - 시군구 249개 벡터 지도 (울릉군 제외), 1° 격자
 - 상대 드래그 조준, 조준선·조준점·파워 게이지, 데드존 취소
-- 사거리 곡선 + 바람, 비행 연출(스케일·그림자·궤적), 임팩트·핀·하이라이트, 햅틱
+- 사거리 곡선 + 가시 바람(HUD) + 비행 사건(무풍 55%→강풍 10%), 비행 연출(스케일·그림자·궤적·액터), 임팩트·핀·하이라이트, 햅틱
 - even-odd 판정, 30km 스냅, 헛발 처리
 - 결과 시트(지역명·시도·좌표·바람·코드·스냅 노트), 착지점 가림 방지 시프트
 - 공유 URL 재현, Web Share/클립보드, 카카오맵 딥링크
@@ -438,3 +467,4 @@ docs/DESIGN.md            # 이 문서
 | v0.1 | 2026-09-08 | 구현 전 초안. 단일 HTML 데모로 핵심 루프 검증 |
 | v0.1.1 | 2026-09-08 | 이름 "우리 어디가" 확정, Vite+React+TS 이식 반영(§9), 테스트 수치 갱신, 로드맵 1단계 상태 갱신 |
 | v0.2 | 2026-09-08 | 디자인 리뉴얼: 낮·종이지도 라이트 테마, DTCG 토큰 + Style Dictionary, shared/ui 프리미티브, /design 쇼케이스(§4.3). three.js/R3F 3D 씬으로 SVG 지도·연출 대체 — 기울어진 직교 카메라 항등 매핑(§4.5), extrude 지형, 절차적 화살(§5.4). e2e를 data-* 속성 기반으로. 번들 예산 400KB(§9.3) |
+| v0.3 | 2026-09-08 | 가시 바람: `windAt` 순수 함수 + HUD 게이지, 잔여 난수. 비행 사건 4종(종이비행기·손가락·갈매기·돌풍) — 꺾이는 궤적 + 절차적 액터. `windSigma` 삭제. |

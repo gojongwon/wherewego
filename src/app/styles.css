@@ -35,6 +35,7 @@ body {
   user-select: none;
   -webkit-user-select: none;
   box-shadow: 0 0 0 1px var(--color-border-subtle);
+  --safe-top: env(safe-area-inset-top, 0px);
 }
 .layer {
   position: absolute;
@@ -91,10 +92,12 @@ body {
   text-wrap: balance;
   min-height: 1.5em;
 }
-.hint b {
-  color: var(--color-text-accent);
-  font-weight: 400;
-  font-variant-numeric: tabular-nums;
+.stage[data-compact='1'] .hint {
+  top: calc(env(safe-area-inset-top, 0px) + 48px);
+  font-size: var(--font-size-xs);
+}
+.stage[data-compact='1'] .brand small {
+  display: none;
 }
 .credit {
   position: absolute;

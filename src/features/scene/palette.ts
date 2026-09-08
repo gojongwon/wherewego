@@ -14,6 +14,7 @@ export const SCENE_COLORS = {
   bow: tokens.color.ink['700'],
   impact: tokens.map.impact,
   pinMiss: tokens.map['pin-miss'],
+  actor: tokens.map.actor,
   shadow: tokens.map.shadow.color,
   shadowOpacity: tokens.map.shadow.opacity,
 } as const;

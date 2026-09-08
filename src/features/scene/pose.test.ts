@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { easeOut, type FlightEvent } from '@/features/shooter';
 import { apexHeight, flightPose, yawOf } from './pose';
 
 const A = [195, 674] as const;
 const L = [250, 300] as const;
 const PIN = (62 * Math.PI) / 180;
+const EV: FlightEvent = { kind: 'plane', at: 0.5, side: 1, kick: [20, 0] };
 
 describe('flightPose', () => {
   it('τ=0 앵커, τ=1 착지점, 높이 0', () => {
@@ -27,6 +29,20 @@ describe('flightPose', () => {
   it('yaw: 북(−dy) = +90°, 동(+dx) = 0', () => {
     expect(yawOf(0, -1)).toBeCloseTo(Math.PI / 2);
     expect(yawOf(1, 0)).toBeCloseTo(0);
+  });
+  it('사건: at에서 Pe, pos(1)=landing, τ<at는 L0 직선 위', () => {
+    const L0x = L[0] - EV.kick[0];
+    const L0z = L[1] - EV.kick[1];
+    const e = easeOut(EV.at);
+    const pAt = flightPose(EV.at, A, L, 80, PIN, EV);
+    expect(pAt.x).toBeCloseTo(A[0] + (L0x - A[0]) * e);
+    expect(pAt.z).toBeCloseTo(A[1] + (L0z - A[1]) * e);
+    const end = flightPose(1, A, L, 80, PIN, EV);
+    expect(end.x).toBeCloseTo(L[0]);
+    expect(end.z).toBeCloseTo(L[1]);
+    const mid = flightPose(0.25, A, L, 80, PIN, EV);
+    const cross = (mid.x - A[0]) * (L0z - A[1]) - (mid.z - A[1]) * (L0x - A[0]);
+    expect(cross).toBeCloseTo(0, 6);
   });
 });
 
