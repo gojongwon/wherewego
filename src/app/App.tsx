@@ -1,0 +1,167 @@
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { LAYOUT } from '@/shared/params';
+import { REGIONS, MapLayer, fitMercator, fullName, toScreen } from '@/features/map';
+import { FxLayer, type ShotGeometry } from '@/features/shooter';
+import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
+import { gameReducer, initialState, type Hint } from './gameReducer';
+import { computeLayout } from './layout';
+import { makeShot, replayShot } from './makeShot';
+
+export function App() {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLElement>(null);
+  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const phaseRef = useRef(state.phase);
+  phaseRef.current = state.phase;
+
+  // ---- 스테이지 크기: IDLE에서만 반영 (연출 중 레이아웃 변경 금지, 설계서 §7)
+  const [size, setSize] = useState<{ w: number; h: number } | null>(null);
+  useEffect(() => {
+    const el = stageRef.current;
+    if (!el) return;
+    const measure = () => {
+      if (phaseRef.current !== 'IDLE') return;
+      setSize({ w: el.clientWidth, h: el.clientHeight });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // ---- 레이아웃 → 투영 → 화면좌표 링 (크기 바뀔 때만)
+  const layout = useMemo(() => (size ? computeLayout(size.w, size.h) : null), [size]);
+  const projection = useMemo(() => (layout ? fitMercator(REGIONS, layout.mapBox) : null), [layout]);
+  const screen = useMemo(() => (projection ? toScreen(REGIONS, projection) : null), [projection]);
+
+  // ---- 공유 URL 재현: 첫 레이아웃이 잡히면 1회
+  const replayed = useRef(false);
+  useEffect(() => {
+    if (replayed.current || !screen || !projection) return;
+    replayed.current = true;
+    const lonLat = parseReplayParams();
+    if (lonLat) dispatch({ type: 'REPLAY', shot: replayShot(lonLat, screen, projection) });
+  }, [screen, projection]);
+
+  // ---- LANDED → RESULT 지연
+  useEffect(() => {
+    if (state.phase !== 'LANDED') return;
+    const t = setTimeout(() => dispatch({ type: 'SHOW_RESULT' }), LAYOUT.resultDelayMs);
+    return () => clearTimeout(t);
+  }, [state.phase]);
+
+  // ---- 결과 시트가 착지점을 가리면 지도·연출 레이어를 위로
+  const [shiftY, setShiftY] = useState(0);
+  useLayoutEffect(() => {
+    if (state.phase !== 'RESULT' || !state.shot || !layout) {
+      setShiftY(0);
+      return;
+    }
+    const sheetH = sheetRef.current?.offsetHeight ?? 0;
+    const py = (state.shot.hit ? state.shot.hit.point : state.shot.geometry.landing)[1];
+    setShiftY(Math.max(0, py + 36 - (layout.height - sheetH)));
+  }, [state.phase, state.shot, layout]);
+
+  // ---- 토스트
+  const [toast, setToast] = useState<string | null>(null);
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 1800);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const onFire = useCallback(
+    (geometry: ShotGeometry) => {
+      if (!screen || !projection) return;
+      dispatch({ type: 'FIRE', shot: makeShot(geometry, screen, projection) });
+    },
+    [screen, projection],
+  );
+  const onAgain = useCallback(() => {
+    dispatch({ type: 'RESET' });
+    if (location.search) history.replaceState(null, '', location.pathname);
+  }, []);
+  const onShare = useCallback(async () => {
+    const shot = state.shot;
+    if (!shot?.hit) return;
+    const region = REGIONS[shot.hit.index];
+    const url = buildShareUrl(shot.lonLat);
+    const outcome = await shareResult({ title: '우리 어디가', text: `이번 여행지는 ${fullName(region)}! 🏹`, url });
+    if (outcome === 'copied') setToast('링크를 복사했어요');
+    else if (outcome === 'failed') setToast(url);
+  }, [state.shot]);
+
+  const hitIndex = state.shot?.hit && state.phase !== 'FLYING' ? state.shot.hit.index : null;
+
+  return (
+    <div className="stage" ref={stageRef}>
+      {layout && projection && screen && (
+        <>
+          <MapLayer screen={screen} projection={projection} hitIndex={hitIndex} shiftY={shiftY} />
+          <FxLayer
+            anchor={layout.anchor}
+            dMax={layout.dMax}
+            shiftY={shiftY}
+            phase={state.phase}
+            shot={state.shot}
+            onAimStart={() => dispatch({ type: 'AIM_START' })}
+            onAimMove={(ratio, inDeadZone) => dispatch({ type: 'AIM_MOVE', ratio, inDeadZone })}
+            onAimCancel={() => dispatch({ type: 'AIM_CANCEL' })}
+            onFire={onFire}
+            onFlightEnd={() => dispatch({ type: 'LAND' })}
+          />
+        </>
+      )}
+
+      <div className="credit">경계 데이터: 통계청 SGIS(2018) · southkorea-maps · 게임용 단순화</div>
+
+      <header className="hud">
+        <div className="brand">
+          우리 어디가<small>Where we go · v0.1</small>
+        </div>
+      </header>
+      <p className="hint" data-testid="hint">
+        <HintText hint={state.hint} />
+      </p>
+
+      <ResultSheet
+        ref={sheetRef}
+        shot={state.shot}
+        regions={REGIONS}
+        open={state.phase === 'RESULT'}
+        onAgain={onAgain}
+        onShare={onShare}
+      />
+      <div className={toast ? 'toast show' : 'toast'} role="status">
+        {toast}
+      </div>
+    </div>
+  );
+}
+
+function HintText({ hint }: { hint: Hint }) {
+  switch (hint.kind) {
+    case 'idle':
+      return (
+        <>
+          화면을 <b>아래로 당겼다 놓으면</b> 화살이 날아가요
+        </>
+      );
+    case 'deadzone':
+      return <>조금 더 당겨요 · 여기서 놓으면 취소</>;
+    case 'aiming':
+      return (
+        <>
+          놓으면 발사 · 세기 <b>{hint.percent}%</b>
+        </>
+      );
+    case 'cancelled':
+      return (
+        <>
+          취소했어요. 다시 <b>아래로 당겨</b> 보세요
+        </>
+      );
+    case 'none':
+      return null;
+  }
+}
