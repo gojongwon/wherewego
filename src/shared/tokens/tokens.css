@@ -1,0 +1,109 @@
+/**
+ * Do not edit directly, this file was auto-generated.
+ */
+
+:root {
+  --color-paper-50: #fffcf3; /** 시트 표면 (가장 밝은 종이) */
+  --color-paper-100: #f6efdc; /** 스테이지 배경 (크림) */
+  --color-paper-200: #ede3c8; /** 틴트 */
+  --color-paper-300: #dccfae; /** 약한 테두리, 그립 */
+  --color-paper-400: #c4b48d; /** 강한 테두리 */
+  --color-ink-300: #b3a692; /** 장식 전용 (텍스트 AA 미달) */
+  --color-ink-500: #75634f; /** 뮤트 텍스트, 육지 외곽선 */
+  --color-ink-700: #5c4b3b; /** 보조 텍스트 */
+  --color-ink-900: #2b2118; /** 본문 텍스트, 화살 샤프트 */
+  --color-water-100: #e4eff2;
+  --color-water-200: #cfe2e8; /** 물 기본 */
+  --color-water-300: #b4d0d9; /** 깊은 물, 격자 */
+  --color-orange-100: #fbe3d0;
+  --color-orange-400: #f3a15f; /** 지도 하이라이트 */
+  --color-orange-500: #e8702a; /** primary 채움, 화살촉 (텍스트 배경으론 어두운 글자만) */
+  --color-orange-700: #a64a12; /** 강조 텍스트, 포커스 링 */
+  --color-stamp-500: #c9432f; /** 임팩트 링 */
+  --color-stamp-600: #b2372a; /** 헛발 텍스트 */
+  --color-land-sage: #cfe0b8;
+  --color-land-sand: #f3e3a8;
+  --color-land-peach: #f6cdb3;
+  --color-land-lilac: #dcd3ea;
+  --color-land-mint: #c6e3db;
+  --font-family-display: Jua, 'Apple SD Gothic Neo', system-ui, sans-serif;
+  --font-family-body: 'Gowun Dodum', 'Apple SD Gothic Neo', 'Noto Sans KR', system-ui, sans-serif;
+  --font-size-xs: 11px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 40px;
+  --font-line-height-tight: 1.05;
+  --font-line-height-snug: 1.25;
+  --font-line-height-normal: 1.5;
+  --font-tracking-normal: 0em;
+  --font-tracking-wide: 0.08em;
+  --font-tracking-wider: 0.12em;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-paper: 0px 2px 8px 0px #2B21181F;
+  --shadow-lift: 0px -8px 30px 0px #2B21182E;
+  --motion-duration-fast: 150ms;
+  --motion-duration-base: 250ms;
+  --motion-duration-slow: 380ms;
+  --motion-easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --map-shadow-opacity: 0.25;
+  --button-height: 44px; /** 터치 타깃 (설계서 §10.1) */
+  --color-bg-canvas: var(--color-paper-100);
+  --color-bg-surface: var(--color-paper-50);
+  --color-bg-inverse: var(--color-ink-900);
+  --color-text-primary: var(--color-ink-900);
+  --color-text-secondary: var(--color-ink-700);
+  --color-text-muted: var(--color-ink-500);
+  --color-text-accent: var(--color-orange-700);
+  --color-text-on-accent: var(--color-ink-900);
+  --color-text-inverse: var(--color-paper-50);
+  --color-text-danger: var(--color-stamp-600);
+  --color-border-subtle: var(--color-paper-300);
+  --color-border-strong: var(--color-paper-400);
+  --color-accent-default: var(--color-orange-500);
+  --color-accent-soft: var(--color-orange-100);
+  --color-accent-strong: var(--color-orange-700);
+  --color-focus: var(--color-orange-700);
+  --map-paper: var(--color-paper-100);
+  --map-water: var(--color-water-200);
+  --map-water-deep: var(--color-water-300);
+  --map-grid: var(--color-water-300);
+  --map-land-0: var(--color-land-sage);
+  --map-land-1: var(--color-land-sand);
+  --map-land-2: var(--color-land-peach);
+  --map-land-3: var(--color-land-lilac);
+  --map-land-4: var(--color-land-mint);
+  --map-land-edge: var(--color-ink-500);
+  --map-highlight: var(--color-orange-400);
+  --map-arrow-ink: var(--color-ink-900);
+  --map-arrow-accent: var(--color-orange-500);
+  --map-impact: var(--color-stamp-500);
+  --map-pin-miss: var(--color-ink-500);
+  --map-shadow-color: var(--color-ink-900);
+  --sheet-radius: var(--radius-lg);
+  --sheet-shadow: var(--shadow-lift);
+  --sheet-pad-x: var(--space-5);
+  --sheet-pad-top: var(--space-4);
+  --button-radius: var(--radius-md);
+  --button-font-size: var(--font-size-md);
+  --toast-radius: var(--radius-pill);
+  --sheet-bg: var(--color-bg-surface);
+  --sheet-grip: var(--color-border-strong);
+  --button-primary-bg: var(--color-accent-default);
+  --button-primary-text: var(--color-text-on-accent);
+  --button-ghost-border: var(--color-border-strong);
+  --button-ghost-text: var(--color-text-primary);
+  --toast-bg: var(--color-bg-inverse);
+  --toast-text: var(--color-text-inverse);
+}

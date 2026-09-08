@@ -12,7 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "e2e": "playwright test",
-    "map:build": "bash scripts/build-map.sh"
+    "map:build": "bash scripts/build-map.sh",
+    "tokens:build": "node scripts/build-tokens.mjs",
+    "prebuild": "npm run tokens:build"
   },
   "dependencies": {
     "react": "^19.2.8",
@@ -24,6 +26,7 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
+    "style-dictionary": "^5.5.3",
     "typescript": "~5.9.0",
     "vite": "^8.2.2",
     "vitest": "^5.0.0"
