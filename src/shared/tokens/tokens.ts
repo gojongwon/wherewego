@@ -18,9 +18,9 @@ export const tokens = {
       "900": "#2b2118"
     },
     "water": {
-      "100": "#e4eff2",
-      "200": "#cfe2e8",
-      "300": "#b4d0d9"
+      "100": "#eef4f7",
+      "200": "#dde8ee",
+      "300": "#c9d9e2"
     },
     "orange": {
       "100": "#fbe3d0",
@@ -33,11 +33,16 @@ export const tokens = {
       "600": "#b2372a"
     },
     "land": {
-      "sage": "#cfe0b8",
-      "sand": "#f3e3a8",
-      "peach": "#f6cdb3",
-      "lilac": "#dcd3ea",
-      "mint": "#c6e3db"
+      "cream": "#f5efe2",
+      "edge": "#cdbfa4",
+      "edge-sido": "#8f7e60"
+    },
+    "wood": {
+      "lacquer": "#2e2622",
+      "dark": "#5a4633",
+      "mid": "#8b6b47",
+      "light": "#c9a97e",
+      "birch": "#e9dcc0"
     },
     "bg": {
       "canvas": "#f6efdc",
@@ -119,21 +124,24 @@ export const tokens = {
   },
   "map": {
     "paper": "#f6efdc",
-    "water": "#cfe2e8",
-    "water-deep": "#b4d0d9",
-    "grid": "#b4d0d9",
-    "land": {
-      "0": "#cfe0b8",
-      "1": "#f3e3a8",
-      "2": "#f6cdb3",
-      "3": "#dcd3ea",
-      "4": "#c6e3db"
-    },
-    "land-edge": "#75634f",
-    "highlight": "#f3a15f",
+    "water": "#dde8ee",
+    "water-deep": "#c9d9e2",
+    "land": "#f5efe2",
+    "land-edge": "#cdbfa4",
+    "sido-edge": "#8f7e60",
+    "highlight": "#e8702a",
     "arrow": {
       "ink": "#2b2118",
-      "accent": "#e8702a"
+      "accent": "#e8702a",
+      "shaft": "#e9dcc0"
+    },
+    "bow": {
+      "limb": "#2e2622",
+      "siyah": "#5a4633",
+      "stripe": "#e9dcc0",
+      "grip": "#2b2118",
+      "band": "#e9dcc0",
+      "string": "#2b2118"
     },
     "impact": "#c9432f",
     "pin-miss": "#75634f",

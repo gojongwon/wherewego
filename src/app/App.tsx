@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { LAYOUT, PARAMS } from '@/shared/params';
 import { haversineKm } from '@/shared/geo';
 import { Toast } from '@/shared/ui';
-import { REGIONS, fitMercator, fullName, toScreen } from '@/features/map';
+import { MAINLAND_EXTENT, REGIONS, SIDO_BOUNDARIES, fitMercator, fullName, toScreen } from '@/features/map';
 import { InputLayer, createAimState, parseEventParam, EVENT_LABEL, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
@@ -19,6 +19,7 @@ export function App() {
   phaseRef.current = state.phase;
   const [round, setRound] = useState(newRound);
   const [forceEvent] = useState(() => (import.meta.env.DEV ? parseEventParam(location.search) : undefined));
+  const [infoOpen, setInfoOpen] = useState(false);
   // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
   const [aim] = useState(createAimState);
 
@@ -40,7 +41,11 @@ export function App() {
 
   // ---- 레이아웃 → 투영 → 화면좌표 링 (크기 바뀔 때만)
   const layout = useMemo(() => (size ? computeLayout(size.w, size.h, size.safeTop) : null), [size]);
-  const projection = useMemo(() => (layout ? fitMercator(REGIONS, layout.mapBox) : null), [layout]);
+  // A안: 본토+제주 기준으로 맞추고 남단을 활 쪽에 붙인다 (서해 5도는 화면 밖으로 나가도 됨)
+  const projection = useMemo(
+    () => (layout ? fitMercator(REGIONS, layout.mapBox, { extent: MAINLAND_EXTENT, align: 'bottom' }) : null),
+    [layout],
+  );
   const screen = useMemo(() => (projection ? toScreen(REGIONS, projection) : null), [projection]);
 
   // ---- 공유 URL 재현: 첫 레이아웃이 잡히면 1회
@@ -121,18 +126,23 @@ export function App() {
       data-phase={state.phase}
       data-hit={hitIndex !== null ? REGIONS[hitIndex].code : ''}
       data-compact={layout?.compact ? '1' : '0'}
+      style={
+        layout
+          ? ({ '--anchor-x': `${layout.anchor[0]}px`, '--anchor-y': `${layout.anchor[1]}px` } as CSSProperties)
+          : undefined
+      }
     >
       {layout && projection && screen && (
         <>
           <SceneLayer
             width={layout.width}
             height={layout.height}
-            mapBox={layout.mapBox}
             anchor={layout.anchor}
             dMax={layout.dMax}
             regions={REGIONS}
             screen={screen}
             projection={projection}
+            boundaries={SIDO_BOUNDARIES}
             aim={aim}
             phase={state.phase}
             shot={state.shot}
@@ -156,20 +166,37 @@ export function App() {
         </>
       )}
 
-      <div className="credit">경계 데이터: 통계청 SGIS(2018) · southkorea-maps · 게임용 단순화</div>
-
       <header className="hud">
-        <div className="brand">
-          우리 어디가<small>Where we go · v0.1</small>
-        </div>
-        {layout && (
-          <WindGauge
-            round={round}
-            kmPerPx={kmPerPx}
-            active={state.phase === 'IDLE' || state.phase === 'AIMING'}
-          />
-        )}
+        <div className="brand">우리 어디가</div>
+        <button
+          type="button"
+          className="info-btn"
+          aria-label="정보"
+          aria-expanded={infoOpen}
+          onClick={() => setInfoOpen((v) => !v)}
+        >
+          i
+        </button>
       </header>
+      {infoOpen && (
+        <div className="info-pop" role="dialog" aria-label="정보">
+          <b>우리 어디가</b> v0.1 · Where we go
+          <br />
+          경계 데이터: 통계청 SGIS(2018) · southkorea-maps · 게임용 단순화
+        </div>
+      )}
+
+      {layout && (
+        <div
+          className="wind-dock"
+          style={{
+            left: layout.anchor[0] + LAYOUT.windChipOffset[0],
+            top: layout.anchor[1] + LAYOUT.windChipOffset[1],
+          }}
+        >
+          <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
+        </div>
+      )}
       <p className="hint" data-testid="hint">
         <HintText hint={state.hint} />
       </p>
@@ -192,7 +219,7 @@ function HintText({ hint }: { hint: Hint }) {
     case 'idle':
       return (
         <>
-          화면을 <b>아래로 당겼다 놓으면</b> 화살이 날아가요
+          ↓ 아래로 <b>당겼다 놓으면</b> 화살이 날아가요
         </>
       );
     case 'deadzone':

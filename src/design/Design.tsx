@@ -22,7 +22,7 @@ export function Design() {
       <p className="t-meta">출처 src/shared/tokens/tokens.json · 편집 후 npm run tokens:build</p>
 
       <Section title="색">
-        {(['paper', 'ink', 'water', 'orange', 'stamp', 'land'] as const).map((g) => (
+        {(['paper', 'ink', 'water', 'orange', 'stamp', 'land', 'wood'] as const).map((g) => (
           <div key={g} className="ds-row">
             <span className="ds-label">{g}</span>
             {flatten(tokens.color[g]).map(([k, hex]) => (

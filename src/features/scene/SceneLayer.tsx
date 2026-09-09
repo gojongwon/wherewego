@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import type { Point } from '@/shared/geo';
+import type { LonLat, Point } from '@/shared/geo';
 import { SCENE } from '@/shared/params';
 import { useReducedMotion } from '@/shared/useReducedMotion';
-import type { Box, Projection, Region, ScreenRegion } from '@/features/map';
+import type { Projection, Region, ScreenRegion } from '@/features/map';
 import type { AimState } from '@/features/shooter';
 import type { Phase, Shot } from '@/app/gameReducer';
 import { CameraRig } from './CameraRig';
@@ -16,12 +16,13 @@ import { Flight } from './Flight';
 interface Props {
   width: number;
   height: number;
-  mapBox: Box;
   anchor: Point;
   dMax: number;
   regions: readonly Region[];
   screen: readonly ScreenRegion[];
   projection: Projection;
+  /** 시도 경계 + 해안 폴리라인 (경위도) */
+  boundaries: readonly LonLat[][];
   /** mutable 조준 상태 — InputLayer가 쓰고 Bow/AimGuide가 프레임마다 읽는다 */
   aim: AimState;
   phase: Phase;
@@ -36,7 +37,7 @@ interface Props {
  * frameloop="demand": IDLE에서는 프레임을 그리지 않는다. 갱신이 필요한 쪽이 invalidate()를 부른다.
  */
 export function SceneLayer(props: Props) {
-  const { width, height, mapBox, anchor, dMax, regions, screen, projection, aim, phase, shot, hitIndex, shiftY, onFlightEnd } = props;
+  const { width, height, anchor, dMax, regions, screen, projection, boundaries, aim, phase, shot, hitIndex, shiftY, onFlightEnd } = props;
   const [ready, setReady] = useState(false);
   const reduced = useReducedMotion();
   return (
@@ -60,8 +61,8 @@ export function SceneLayer(props: Props) {
         }}
       >
         <CameraRig width={width} height={height} shiftY={shiftY} reduced={reduced} />
-        <Water box={mapBox} projection={projection} />
-        <Terrain regions={regions} screen={screen} projection={projection} hitIndex={hitIndex} reduced={reduced} />
+        <Water width={width} height={height} />
+        <Terrain regions={regions} screen={screen} projection={projection} boundaries={boundaries} hitIndex={hitIndex} reduced={reduced} />
         <Bow anchor={anchor} aim={aim} phase={phase} />
         <AimGuide anchor={anchor} aim={aim} />
         <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} width={width} reduced={reduced} onFlightEnd={onFlightEnd} />

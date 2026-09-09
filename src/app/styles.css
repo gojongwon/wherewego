@@ -1,4 +1,5 @@
-/* 앱 레벨 스타일. 토큰은 src/shared/tokens/tokens.css (자동 생성, 출처 tokens.json). 설계서 §4.3 — 낮·종이지도, 라이트 단일 테마. */
+/* 앱 레벨 스타일. 토큰은 src/shared/tokens/tokens.css (자동 생성, 출처 tokens.json).
+   설계서 §4.3 — A안 '종이': 연한 바다가 화면을 채우고(풀블리드) 그 위에 크림 육지 한 톤. 라이트 단일 테마. */
 :root {
   color-scheme: light;
 }
@@ -23,19 +24,21 @@ body {
   overscroll-behavior: none;
 }
 
-/* ---------- 스테이지 (폭·상단 오프셋은 shared/params.ts LAYOUT과 짝) ---------- */
+/* ---------- 스테이지 (폭·앵커는 shared/params.ts LAYOUT과 짝; --anchor-x/y는 App이 레이아웃에서 넣는다) ---------- */
 .stage {
   position: relative;
   width: min(100vw, 430px);
   height: 100dvh;
   margin: 0 auto;
-  background: radial-gradient(120% 90% at 50% 20%, var(--color-bg-surface) 0%, var(--color-bg-canvas) 100%);
+  background: var(--map-water); /* 캔버스 밖·로딩 중에도 바다와 같은 색 */
   overflow: hidden;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
-  box-shadow: 0 0 0 1px var(--color-border-subtle);
+  box-shadow: 0 0 0 1px var(--color-water-300);
   --safe-top: env(safe-area-inset-top, 0px);
+  --anchor-x: 50%;
+  --anchor-y: 70%;
 }
 .layer {
   position: absolute;
@@ -51,38 +54,69 @@ body {
   cursor: crosshair;
 }
 
-/* ---------- HUD ---------- */
+/* ---------- HUD: 브랜드 한 줄 + 정보 버튼. 그 외 상시 노출 요소 없음 ---------- */
 .hud {
   position: absolute;
   left: 0;
   right: 0;
   top: 0;
-  padding: calc(env(safe-area-inset-top, 0px) + 14px) 18px 0;
+  padding: calc(env(safe-area-inset-top, 0px) + 14px) 16px 0 18px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   pointer-events: none;
 }
 .brand {
   font-family: var(--font-family-display);
-  font-size: var(--font-size-xl);
-  letter-spacing: 0.02em;
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.01em;
   line-height: 1;
+  color: var(--color-text-primary);
 }
-.brand small {
-  display: block;
-  font-family: var(--font-family-body);
-  font-size: var(--font-size-xs);
+.info-btn {
+  pointer-events: auto;
+  appearance: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--color-water-300);
+  background: color-mix(in srgb, var(--color-bg-surface) 60%, transparent);
   color: var(--color-text-muted);
-  letter-spacing: var(--font-tracking-wide);
-  margin-top: 5px;
-  text-transform: uppercase;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
+.info-btn:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+.info-pop {
+  position: absolute;
+  right: 16px;
+  top: calc(env(safe-area-inset-top, 0px) + 48px);
+  max-width: 260px;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+  box-shadow: var(--shadow-paper);
+  border: 1px solid var(--color-border-subtle);
+}
+.info-pop b {
+  color: var(--color-text-primary);
+}
+
+/* ---------- 활 주변: 힌트는 활 아래(당기는 자리), 바람 칩은 활 옆 ---------- */
 .hint {
   position: absolute;
   left: 0;
   right: 0;
-  top: calc(env(safe-area-inset-top, 0px) + 64px);
+  top: calc(var(--anchor-y) + 64px);
   margin: 0;
   padding: 0 var(--space-6);
   text-align: center;
@@ -92,21 +126,15 @@ body {
   text-wrap: balance;
   min-height: 1.5em;
 }
+.hint b {
+  color: var(--color-text-accent);
+  font-weight: 700;
+}
 .stage[data-compact='1'] .hint {
-  top: calc(env(safe-area-inset-top, 0px) + 48px);
   font-size: var(--font-size-xs);
+  top: calc(var(--anchor-y) + 56px);
 }
-.stage[data-compact='1'] .brand small {
-  display: none;
-}
-.credit {
+.wind-dock {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-2));
-  text-align: center;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
   pointer-events: none;
-  letter-spacing: 0.02em;
 }

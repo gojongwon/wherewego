@@ -12,7 +12,7 @@ describe('computeLayout (390×844 모바일 — 지도 우선)', () => {
   });
   it('지도가 화면의 대부분을 차지한다', () => {
     expect(L.mapBox.y).toBeGreaterThanOrEqual(72);
-    expect(L.mapBox.y + L.mapBox.height).toBeLessThanOrEqual(L.anchor[1] - 22);
+    expect(L.mapBox.y + L.mapBox.height).toBeLessThanOrEqual(L.anchor[1] - LAYOUT.mapBottomGapCompact);
     expect(L.mapBox.height / L.height).toBeGreaterThan(0.7);
   });
   it('dMax는 앵커→지도 북단 + overshoot', () => {

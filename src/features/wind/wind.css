@@ -1,23 +1,48 @@
+/* 바람 칩 — 활 옆 (위치는 App의 .wind-dock이 앵커 기준으로 잡는다) */
 .wind {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  color: var(--color-accent-default);
-  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-bg-surface) 72%, transparent);
+  border: 1px solid var(--color-water-300);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  letter-spacing: 0.02em;
   line-height: 1;
+  white-space: nowrap;
+  transition: opacity var(--motion-duration-base);
+}
+.wind[data-active='0'] {
+  opacity: 0;
 }
 .wind-arrow {
   display: block;
+  color: var(--color-accent-default);
   transform-origin: 50% 50%;
   will-change: transform;
 }
-.wind b {
-  font-size: var(--font-size-sm);
-  font-weight: 600;
+.wind-dots {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
 }
-.wind span {
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
-  letter-spacing: var(--font-tracking-wide);
+.wind-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--color-accent-default);
+  display: inline-block;
+}
+.wind-dots i.off {
+  background: var(--color-water-300);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }

@@ -81,8 +81,14 @@ export const LAYOUT = {
   mapTop: 96,
   /** 화면 하단에서 앵커까지 거리 (당길 공간 ≈ 170px 확보) */
   anchorFromBottom: 170,
-  /** 앵커 위 지도 하한 여백 */
-  mapBottomGap: 40,
+  /** 앵커 위 지도 하한 여백 — 각궁(폭 ≈144px) + 장전 화살(앵커 앞 39px)이 제주를 가리지 않을 만큼 */
+  mapBottomGap: 70,
+  /** 위 값의 compact(짧은 화면)판 */
+  mapBottomGapCompact: 52,
+  /** 활 아래 힌트 위치 (앵커 기준 px) */
+  hintBelowAnchor: 64,
+  /** 바람 칩 위치 (앵커 기준 px) — 활 오른쪽 옆 */
+  windChipOffset: [84, -14] as readonly [number, number],
   /** 지도 좌우 패딩 */
   mapPad: 18,
   /** 데스크톱에서 세로 스테이지 최대 폭 */
@@ -103,4 +109,6 @@ export const SCENE = {
   maxDpr: 2,
   /** 맞은 시군구가 솟는 높이 */
   hitLift: 4,
+  /** 시도 경계·해안 fat line 굵기 (px). 시군구 선은 1px 고정 */
+  sidoEdgePx: 1.6,
 } as const;

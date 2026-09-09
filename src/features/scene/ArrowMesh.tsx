@@ -17,13 +17,21 @@ function paint(g: BufferGeometry, hex: string): BufferGeometry {
 }
 
 /**
- * 미니멀 지오메트릭 화살 — 얇은 샤프트(잉크) + 원뿔 촉(오렌지) + 작은 십자 깃(잉크).
+ * 죽시(대나무 살) — 자작나무 빛 샤프트에 어두운 마디 두 개 + 원뿔 촉(오렌지) + 작은 십자 깃(잉크).
  * 로컬 +x가 진행 방향, 촉 끝이 원점. 모듈 로드 시 1회 생성해 장전·비행·핀·그림자가 공유한다.
  */
 function buildArrow(): BufferGeometry {
-  const shaft = new CylinderGeometry(1.1, 1.1, ARROW_LENGTH - 2, 6);
+  const shaft = new CylinderGeometry(1.15, 1.15, ARROW_LENGTH - 2, 8);
   shaft.rotateZ(Math.PI / 2);
   shaft.translate(-(ARROW_LENGTH - 2) / 2 - 1, 0, 0);
+
+  // 마디 — 샤프트보다 살짝 굵은 짧은 띠
+  const nodes = [-18, -38].map((x) => {
+    const n = new CylinderGeometry(1.35, 1.35, 1.4, 8);
+    n.rotateZ(Math.PI / 2);
+    n.translate(x, 0, 0);
+    return paint(n, SCENE_COLORS.arrowInk);
+  });
 
   const head = new ConeGeometry(3.4, 11, 10);
   head.rotateZ(-Math.PI / 2); // +y → +x
@@ -37,7 +45,7 @@ function buildArrow(): BufferGeometry {
   finH.translate(-(ARROW_LENGTH - 4.5), 0, 0);
 
   const merged = mergeGeometries(
-    [paint(shaft, SCENE_COLORS.arrowInk), paint(head, SCENE_COLORS.arrowAccent), paint(finV, SCENE_COLORS.arrowInk), paint(finH, SCENE_COLORS.arrowInk)],
+    [paint(shaft, SCENE_COLORS.arrowShaft), ...nodes, paint(head, SCENE_COLORS.arrowAccent), paint(finV, SCENE_COLORS.arrowInk), paint(finH, SCENE_COLORS.arrowInk)],
     false,
   );
   if (!merged) throw new Error('arrow merge failed');

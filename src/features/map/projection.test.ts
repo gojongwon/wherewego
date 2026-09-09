@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from './index';
-import { fitMercator } from './projection';
+import { MAINLAND_EXTENT, fitMercator } from './projection';
 
 const box = { x: 18, y: 105, width: 354, height: 520 };
 
@@ -38,5 +38,36 @@ describe('fitMercator', () => {
     const busan = proj.project([129.0756, 35.1796]);
     expect(seoul[1]).toBeLessThan(busan[1]);
     expect(seoul[0]).toBeLessThan(busan[0]);
+  });
+});
+
+describe('fitMercator — 본토 기준 extent + bottom 정렬 (A안)', () => {
+  const proj = fitMercator(REGIONS, box, { extent: MAINLAND_EXTENT, align: 'bottom' });
+
+  it('extent 남단이 box 하단에 닿고, 좌우는 가운데', () => {
+    const [x0, yBottom] = proj.project([MAINLAND_EXTENT.lon[0], MAINLAND_EXTENT.lat[0]]);
+    const [x1] = proj.project([MAINLAND_EXTENT.lon[1], MAINLAND_EXTENT.lat[0]]);
+    expect(yBottom).toBeCloseTo(box.y + box.height, 6);
+    expect((x0 + x1) / 2).toBeCloseTo(box.x + box.width / 2, 6);
+  });
+
+  it('본토·제주는 box 안, 서해 5도(백령도)는 왼쪽 밖으로 나가도 된다', () => {
+    const jeju = proj.project([126.5312, 33.4996]);
+    const goseong = proj.project([128.4678, 38.3806]); // 강원 고성
+    for (const [x, y] of [jeju, goseong]) {
+      expect(x).toBeGreaterThanOrEqual(box.x);
+      expect(x).toBeLessThanOrEqual(box.x + box.width);
+      expect(y).toBeGreaterThanOrEqual(box.y);
+      expect(y).toBeLessThanOrEqual(box.y + box.height);
+    }
+    const baengnyeong = proj.project([124.7, 37.96]);
+    expect(baengnyeong[0]).toBeLessThan(box.x);
+  });
+
+  it('extent를 써도 invert(project(p)) ≈ p', () => {
+    const p: [number, number] = [128.8761, 37.7519];
+    const back = proj.invert(proj.project(p));
+    expect(back[0]).toBeCloseTo(p[0], 6);
+    expect(back[1]).toBeCloseTo(p[1], 6);
   });
 });
