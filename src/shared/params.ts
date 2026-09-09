@@ -80,7 +80,7 @@ export const PARAMS: GameParams = {
 /** 레이아웃 상수 (설계서 §4.1) */
 export const LAYOUT = {
   /** HUD 아래, 지도 상한 */
-  mapTop: 96,
+  mapTop: 72,
   /** 화면 하단에서 앵커까지 거리 (당길 공간 ≈ 170px 확보) */
   anchorFromBottom: 170,
   /** 앵커 위 지도 하한 여백 — 각궁(폭 ≈144px) + 장전 화살(앵커 앞 39px)이 제주를 가리지 않을 만큼 */

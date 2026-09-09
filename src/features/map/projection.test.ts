@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { computeLayout } from '@/app/layout';
 import { REGIONS } from './index';
 import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, fitMercator } from './projection';
 
@@ -43,6 +44,10 @@ describe('fitMercator', () => {
 
 describe('fitMercator — 본토 기준 extent + bottom 정렬 (A안)', () => {
   const proj = fitMercator(REGIONS, box, { extent: MAINLAND_EXTENT, align: 'bottom' });
+  const loose = fitMercator(REGIONS, box, {
+    extent: { lon: [126.05, 129.65], lat: [33.15, 38.65] },
+    align: 'bottom',
+  });
 
   it('extent 남단이 box 하단에 닿고, 좌우는 가운데', () => {
     const [x0, yBottom] = proj.project([MAINLAND_EXTENT.lon[0], MAINLAND_EXTENT.lat[0]]);
@@ -53,8 +58,9 @@ describe('fitMercator — 본토 기준 extent + bottom 정렬 (A안)', () => {
 
   it('본토·제주는 box 안, 서해 5도(백령도)는 왼쪽 밖으로 나가도 된다', () => {
     const jeju = proj.project([126.5312, 33.4996]);
+    const jejuWest = proj.project([126.16, 33.25]);
     const goseong = proj.project([128.4678, 38.3806]); // 강원 고성
-    for (const [x, y] of [jeju, goseong]) {
+    for (const [x, y] of [jeju, jejuWest, goseong]) {
       expect(x).toBeGreaterThanOrEqual(box.x);
       expect(x).toBeLessThanOrEqual(box.x + box.width);
       expect(y).toBeGreaterThanOrEqual(box.y);
@@ -62,6 +68,10 @@ describe('fitMercator — 본토 기준 extent + bottom 정렬 (A안)', () => {
     }
     const baengnyeong = proj.project([124.7, 37.96]);
     expect(baengnyeong[0]).toBeLessThan(box.x);
+  });
+
+  it('extent를 조이면 축척이 커진다', () => {
+    expect(proj.k).toBeGreaterThan(loose.k);
   });
 
   it('extent를 써도 invert(project(p)) ≈ p', () => {
@@ -80,11 +90,61 @@ describe('fitMercator — centerLon (가로 시각 중심 보정)', () => {
     expect(proj.project([MAINLAND_CENTER_LON, 36])[0]).toBeCloseTo(box.x + box.width / 2, 6);
     expect(proj.k).toBeCloseTo(base.k, 9);
   });
-  it('extent 중앙보다 동쪽이라 지도 전체가 오른쪽으로 옮겨진다 (서해 섬에 여백)', () => {
+
+  it('본토·제주는 centerLon 보정 후에도 box 안', () => {
+    for (const ll of [
+      [125.9, 34.25],
+      [126.16, 33.25],
+      [126.5312, 33.4996],
+      [126.45, 37.45],
+      [128.4678, 38.3806],
+    ] as const) {
+      const [x, y] = proj.project(ll);
+      expect(x).toBeGreaterThanOrEqual(box.x);
+      expect(x).toBeLessThanOrEqual(box.x + box.width);
+      expect(y).toBeGreaterThanOrEqual(box.y);
+      expect(y).toBeLessThanOrEqual(box.y + box.height);
+    }
+  });
+
+  it('extent 중앙보다 동쪽이라 본토가 왼쪽으로 온다 (서·동해 여백)', () => {
     const lon = (MAINLAND_EXTENT.lon[0] + MAINLAND_EXTENT.lon[1]) / 2;
     expect(proj.project([lon, 36])[0]).toBeLessThan(base.project([lon, 36])[0]);
-    const shift = base.project([lon, 36])[0] - proj.project([lon, 36])[0];
-    expect(shift).toBeGreaterThan(5);
-    expect(shift).toBeLessThan(25);
+  });
+});
+
+describe('fitMercator — top 정렬', () => {
+  const proj = fitMercator(REGIONS, box, { extent: MAINLAND_EXTENT, align: 'top' });
+
+  it('extent 북단이 box 상단에 닿는다', () => {
+    const [, yTop] = proj.project([MAINLAND_CENTER_LON, MAINLAND_EXTENT.lat[1]]);
+    expect(yTop).toBeCloseTo(box.y, 6);
+  });
+});
+
+describe('fitMercator — 390×844 스마트폰에서 한반도가 잘리지 않는다', () => {
+  const layout = computeLayout(390, 844);
+  const proj = fitMercator(REGIONS, layout.mapBox, {
+    extent: MAINLAND_EXTENT,
+    align: 'top',
+    centerLon: MAINLAND_CENTER_LON,
+  });
+  const { mapBox } = layout;
+
+  it('진도·제주 서쪽·강화·울산·고성이 mapBox 안', () => {
+    for (const ll of [
+      [125.9, 34.25],
+      [126.16, 33.25],
+      [126.38, 34.79],
+      [126.16, 37.68],
+      [129.31, 35.54],
+      [128.4678, 38.3806],
+    ] as const) {
+      const [x, y] = proj.project(ll);
+      expect(x).toBeGreaterThanOrEqual(mapBox.x);
+      expect(x).toBeLessThanOrEqual(mapBox.x + mapBox.width);
+      expect(y).toBeGreaterThanOrEqual(mapBox.y);
+      expect(y).toBeLessThanOrEqual(mapBox.y + mapBox.height);
+    }
   });
 });

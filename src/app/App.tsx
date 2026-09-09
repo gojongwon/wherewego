@@ -42,11 +42,11 @@ export function App() {
 
   // ---- 레이아웃 → 투영 → 화면좌표 링 (크기 바뀔 때만)
   const layout = useMemo(() => (size ? computeLayout(size.w, size.h, size.safeTop) : null), [size]);
-  // A안: 본토+제주 기준으로 맞추고 남단을 활 쪽에, 가로는 시각적 중심(동쪽으로 살짝)에 (서해 5도는 화면 밖으로 나가도 됨)
+  // A안: 본토+제주 기준, 북단을 헤더 쪽에. 서해 5도는 화면 밖으로 나가도 됨.
   const projection = useMemo(
     () =>
       layout
-        ? fitMercator(REGIONS, layout.mapBox, { extent: MAINLAND_EXTENT, align: 'bottom', centerLon: MAINLAND_CENTER_LON })
+        ? fitMercator(REGIONS, layout.mapBox, { extent: MAINLAND_EXTENT, align: 'top', centerLon: MAINLAND_CENTER_LON })
         : null,
     [layout],
   );

@@ -24,24 +24,23 @@ export interface Extent {
 export interface FitOptions {
   /** fit 기준 범위. 없으면 모든 링의 bbox. 범위 밖 지형은 그대로 투영되어 화면 밖으로 나갈 수 있다 */
   extent?: Extent;
-  /** 세로로 남는 공간 처리: center = 위아래 균등, bottom = 남단을 box 하단(활 쪽)에 붙임 */
-  align?: 'center' | 'bottom';
+  /** 세로로 남는 공간 처리: center = 위아래 균등, bottom = 남단을 box 하단, top = 북단을 box 상단 */
+  align?: 'center' | 'bottom' | 'top';
   /** box 가로 중앙에 놓을 경도. 없으면 extent(또는 bbox) 중앙. 축척은 바꾸지 않고 좌우 위치만 옮긴다 */
   centerLon?: number;
 }
 
 /**
- * 본토+제주 기준 범위 (설계서 §4.3 A안). 서해 5도·가거도 등 먼 섬을 fit에서 빼 한반도를 가운데에 크게 놓는다.
- * 섬 자체는 그대로 그려진다 — 화면 밖으로 나가는 것만 허용.
- * 범위를 넓히면 지도가 작아져 조준이 어려워지므로 본토에 딱 맞춘다 (지도 크기 우선).
+ * 본토+제주 기준 범위 (설계서 §4.3 A안). 백령·가거도는 fit에서 빼고, 흑산·진도는 넣는다.
+ * 가로는 서해가 잘리지 않을 만큼, 세로는 북단을 헤더 쪽에 붙인다 (남는 공간은 제주–활).
  */
-export const MAINLAND_EXTENT: Extent = { lon: [126.05, 129.65], lat: [33.15, 38.65] };
+export const MAINLAND_EXTENT: Extent = { lon: [125.47, 129.38], lat: [33.25, 38.52] };
 
 /**
- * 화면 가로 중앙에 둘 경도. extent 중앙(127.85)보다 동쪽인 이유: 서해안은 섬과 리아스식 해안이 왼쪽으로 퍼지고
- * 동해안은 매끈해서, 기하학적으로 가운데여도 눈에는 왼쪽으로 치우쳐 보인다. 축척은 그대로, 위치만 ≈10px 오른쪽.
+ * 화면 가로 중앙에 둘 경도. 태안↔울산 시각 중심에 맞춤.
+ * extent 중앙(127.425)보다 동쪽 — 흑산을 가운데에 두면 본토가 오른쪽으로 밀려 서해 여백이 커 보인다.
  */
-export const MAINLAND_CENTER_LON = 127.95;
+export const MAINLAND_CENTER_LON = 127.68;
 
 const mercY = (lat: number): number => Math.log(Math.tan(Math.PI / 4 + (lat * D2R) / 2));
 const invLat = (my: number): number => (2 * Math.atan(Math.exp(my)) - Math.PI / 2) / D2R;
@@ -77,9 +76,9 @@ export function fitMercator(regions: readonly Region[], box: Box, opts: FitOptio
   const k = Math.min(box.width / (mx1 - mx0), box.height / (my1 - my0));
   const cmx = opts.centerLon !== undefined ? opts.centerLon * D2R : (mx0 + mx1) / 2;
   const cx = box.x + box.width / 2;
-  // 세로 배치: center면 bbox 중심을 box 중심에, bottom이면 남단(my0)을 box 하단에
-  const cmy = opts.align === 'bottom' ? my0 : (my0 + my1) / 2;
-  const cy = opts.align === 'bottom' ? box.y + box.height : box.y + box.height / 2;
+  // 세로 배치: top=북단을 box 상단, bottom=남단을 box 하단, 그 외=가운데
+  const cmy = opts.align === 'bottom' ? my0 : opts.align === 'top' ? my1 : (my0 + my1) / 2;
+  const cy = opts.align === 'bottom' ? box.y + box.height : opts.align === 'top' ? box.y : box.y + box.height / 2;
 
   return {
     k,

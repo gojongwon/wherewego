@@ -17,10 +17,10 @@ export interface StageLayout {
 /** 짧은 화면에서는 하단 활 공간을 줄여 지도를 키운다. safeTop은 노치·상태바. */
 export function computeLayout(width: number, height: number, safeTop = 0): StageLayout {
   const compact = height < LAYOUT.compactBelow;
-  const mapTop = (compact ? 72 : LAYOUT.mapTop) + safeTop;
+  const mapTop = (compact ? 56 : LAYOUT.mapTop) + safeTop;
   const fromBottom = compact ? 112 : LAYOUT.anchorFromBottom;
   const gap = compact ? LAYOUT.mapBottomGapCompact : LAYOUT.mapBottomGap;
-  const pad = compact ? 12 : LAYOUT.mapPad;
+  const pad = compact ? 8 : LAYOUT.mapPad;
   const anchor: Point = [width / 2, height - fromBottom];
   const mapBottom = anchor[1] - gap;
   const mapBox: Box = {
