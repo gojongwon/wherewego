@@ -157,6 +157,7 @@ export function App() {
             projection={projection}
             boundaries={SIDO_BOUNDARIES}
             aim={aim}
+            windNow={windNow}
             phase={state.phase}
             shot={state.shot}
             hitIndex={hitIndex}

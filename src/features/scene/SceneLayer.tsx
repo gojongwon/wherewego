@@ -25,6 +25,7 @@ interface Props {
   boundaries: readonly LonLat[][];
   /** mutable 조준 상태 — InputLayer가 쓰고 Bow/AimGuide가 프레임마다 읽는다 */
   aim: AimState;
+  windNow: () => Point;
   phase: Phase;
   shot: Shot | null;
   hitIndex: number | null;
@@ -39,7 +40,7 @@ interface Props {
  * frameloop="demand": IDLE에서는 프레임을 그리지 않는다. 갱신이 필요한 쪽이 invalidate()를 부른다.
  */
 export function SceneLayer(props: Props) {
-  const { width, height, anchor, dMax, regions, screen, projection, boundaries, aim, phase, shot, hitIndex, shiftY, slow = 1, onFlightEnd } = props;
+  const { width, height, anchor, dMax, regions, screen, projection, boundaries, aim, windNow, phase, shot, hitIndex, shiftY, slow = 1, onFlightEnd } = props;
   const [ready, setReady] = useState(false);
   const reduced = useReducedMotion();
   return (
@@ -66,7 +67,7 @@ export function SceneLayer(props: Props) {
         <Water width={width} height={height} />
         <Terrain regions={regions} screen={screen} projection={projection} boundaries={boundaries} hitIndex={hitIndex} reduced={reduced} />
         <Bow anchor={anchor} aim={aim} phase={phase} />
-        <AimGuide anchor={anchor} aim={aim} />
+        <AimGuide anchor={anchor} aim={aim} windNow={windNow} />
         <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} width={width} reduced={reduced} slow={slow} onFlightEnd={onFlightEnd} />
       </Canvas>
     </div>
