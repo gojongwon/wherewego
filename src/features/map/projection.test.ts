@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { computeLayout } from '@/app/layout';
 import { REGIONS } from './index';
-import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, fitMercator } from './projection';
+import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, JP_EXTENT, JP_ROTATE_DEG, fitMercator } from './projection';
+import { PACKS } from './packs';
 
 const box = { x: 18, y: 105, width: 354, height: 520 };
 
@@ -139,6 +140,47 @@ describe('fitMercator — 390×844 스마트폰에서 한반도가 잘리지 않
       [126.16, 37.68],
       [129.31, 35.54],
       [128.4678, 38.3806],
+    ] as const) {
+      const [x, y] = proj.project(ll);
+      expect(x).toBeGreaterThanOrEqual(mapBox.x);
+      expect(x).toBeLessThanOrEqual(mapBox.x + mapBox.width);
+      expect(y).toBeGreaterThanOrEqual(mapBox.y);
+      expect(y).toBeLessThanOrEqual(mapBox.y + mapBox.height);
+    }
+  });
+});
+
+describe('fitMercator — 일본 한 장 (열도 회전)', () => {
+  const layout = computeLayout(390, 844);
+  const opts = { extent: JP_EXTENT, align: 'top' as const, rotateDeg: JP_ROTATE_DEG };
+  const proj = fitMercator(PACKS.jp.regions, layout.mapBox, opts);
+  const upright = fitMercator(PACKS.jp.regions, layout.mapBox, { extent: JP_EXTENT, align: 'top' });
+  const { mapBox } = layout;
+
+  it('북쪽 위를 유지한 채 축척이 커진다', () => {
+    expect(proj.k).toBeGreaterThan(upright.k);
+    const kago = proj.project([130.55, 31.56]);
+    const wakkanai = proj.project([141.85, 45.4]);
+    expect(wakkanai[1]).toBeLessThan(kago[1]);
+  });
+
+  it('invert(project(p)) ≈ p', () => {
+    for (const p of [
+      [139.76, 35.68],
+      [130.55, 31.56],
+      [141.35, 43.06],
+    ] as const) {
+      const back = proj.invert(proj.project(p));
+      expect(back[0]).toBeCloseTo(p[0], 5);
+      expect(back[1]).toBeCloseTo(p[1], 5);
+    }
+  });
+
+  it('가고시마·도쿄·삿포로가 mapBox 안', () => {
+    for (const ll of [
+      [130.55, 31.56],
+      [139.76, 35.68],
+      [141.35, 43.06],
     ] as const) {
       const [x, y] = proj.project(ll);
       expect(x).toBeGreaterThanOrEqual(mapBox.x);

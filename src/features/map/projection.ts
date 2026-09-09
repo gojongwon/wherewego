@@ -28,6 +28,8 @@ export interface FitOptions {
   align?: 'center' | 'bottom' | 'top';
   /** box 가로 중앙에 놓을 경도. 없으면 extent(또는 bbox) 중앙. 축척은 바꾸지 않고 좌우 위치만 옮긴다 */
   centerLon?: number;
+  /** 메르카토르 평면에서 반시계 방향 회전(도). 열도처럼 대각선인 땅을 세로 화면에 맞출 때 */
+  rotateDeg?: number;
 }
 
 /**
@@ -42,6 +44,11 @@ export const MAINLAND_EXTENT: Extent = { lon: [125.47, 129.38], lat: [33.25, 38.
  */
 export const MAINLAND_CENTER_LON = 127.68;
 
+/** 오키나와·아마미·북방영토는 fit에서 빼고, 홋카이도~규슈 본토를 맞춘다. */
+export const JP_EXTENT: Extent = { lon: [128.35, 145.85], lat: [30.95, 45.55] };
+/** 열도를 세로 화면에 가깝게. 북쪽이 약간 왼쪽으로 기운다. */
+export const JP_ROTATE_DEG = 17;
+
 const mercY = (lat: number): number => Math.log(Math.tan(Math.PI / 4 + (lat * D2R) / 2));
 const invLat = (my: number): number => (2 * Math.atan(Math.exp(my)) - Math.PI / 2) / D2R;
 
@@ -50,40 +57,67 @@ const invLat = (my: number): number => (2 * Math.atan(Math.exp(my)) - Math.PI / 
  * 화면↔경위도 변환은 반드시 이 두 함수로만 한다 (설계서 §6.2).
  */
 export function fitMercator(regions: readonly Region[], box: Box, opts: FitOptions = {}): Projection {
+  const rot = ((opts.rotateDeg ?? 0) * Math.PI) / 180;
+  const cos = Math.cos(rot);
+  const sin = Math.sin(rot);
+  const rcx = opts.extent ? ((opts.extent.lon[0] + opts.extent.lon[1]) / 2) * D2R : 0;
+  const rcy = opts.extent ? (mercY(opts.extent.lat[0]) + mercY(opts.extent.lat[1])) / 2 : 0;
+  const spin = (mx: number, my: number): [number, number] => {
+    if (!rot) return [mx, my];
+    const x = mx - rcx;
+    const y = my - rcy;
+    return [rcx + x * cos - y * sin, rcy + x * sin + y * cos];
+  };
+  const unspin = (mx: number, my: number): [number, number] => {
+    if (!rot) return [mx, my];
+    const x = mx - rcx;
+    const y = my - rcy;
+    return [rcx + x * cos + y * sin, rcy - x * sin + y * cos];
+  };
+  const inExtent = (lon: number, lat: number) =>
+    !opts.extent ||
+    (lon >= opts.extent.lon[0] && lon <= opts.extent.lon[1] && lat >= opts.extent.lat[0] && lat <= opts.extent.lat[1]);
+
   let mx0 = Infinity;
   let mx1 = -Infinity;
   let my0 = Infinity;
   let my1 = -Infinity;
-  if (opts.extent) {
-    mx0 = opts.extent.lon[0] * D2R;
-    mx1 = opts.extent.lon[1] * D2R;
-    my0 = mercY(opts.extent.lat[0]);
-    my1 = mercY(opts.extent.lat[1]);
+  const add = (mx: number, my: number) => {
+    if (mx < mx0) mx0 = mx;
+    if (mx > mx1) mx1 = mx;
+    if (my < my0) my0 = my;
+    if (my > my1) my1 = my;
+  };
+
+  if (opts.extent && !rot) {
+    add(opts.extent.lon[0] * D2R, mercY(opts.extent.lat[0]));
+    add(opts.extent.lon[1] * D2R, mercY(opts.extent.lat[1]));
   } else {
     for (const r of regions) {
       for (const ring of r.rings) {
         for (const [lon, lat] of ring) {
-          const mx = lon * D2R;
-          const my = mercY(lat);
-          if (mx < mx0) mx0 = mx;
-          if (mx > mx1) mx1 = mx;
-          if (my < my0) my0 = my;
-          if (my > my1) my1 = my;
+          if (!inExtent(lon, lat)) continue;
+          const [mx, my] = spin(lon * D2R, mercY(lat));
+          add(mx, my);
         }
       }
     }
   }
   const k = Math.min(box.width / (mx1 - mx0), box.height / (my1 - my0));
-  const cmx = opts.centerLon !== undefined ? opts.centerLon * D2R : (mx0 + mx1) / 2;
+  const cmx = !rot && opts.centerLon !== undefined ? opts.centerLon * D2R : (mx0 + mx1) / 2;
   const cx = box.x + box.width / 2;
-  // 세로 배치: top=북단을 box 상단, bottom=남단을 box 하단, 그 외=가운데
   const cmy = opts.align === 'bottom' ? my0 : opts.align === 'top' ? my1 : (my0 + my1) / 2;
   const cy = opts.align === 'bottom' ? box.y + box.height : opts.align === 'top' ? box.y : box.y + box.height / 2;
 
   return {
     k,
-    project: ([lon, lat]) => [cx + (lon * D2R - cmx) * k, cy - (mercY(lat) - cmy) * k],
-    // y 부호 주의: 화면 y는 아래로 증가하므로 (cy − y)
-    invert: ([x, y]) => [((x - cx) / k + cmx) / D2R, invLat((cy - y) / k + cmy)],
+    project: ([lon, lat]) => {
+      const [mx, my] = spin(lon * D2R, mercY(lat));
+      return [cx + (mx - cmx) * k, cy - (my - cmy) * k];
+    },
+    invert: ([x, y]) => {
+      const [mx, my] = unspin((x - cx) / k + cmx, (cy - y) / k + cmy);
+      return [mx / D2R, invLat(my)];
+    },
   };
 }

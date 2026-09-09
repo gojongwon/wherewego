@@ -2,22 +2,29 @@ import type { LonLat } from '@/shared/geo';
 import { provinceOf } from './names';
 import type { Topology } from './topo';
 
+export type BoundaryGroup = (props: { code: string; name: string }) => string;
+
 /**
  * 시/도 경계 + 해안선 폴리라인 (경위도).
  * TopoJSON의 arc 공유 구조를 이용한다: 한 arc를 쓰는 시군구들의 시도가 서로 다르면 시도 경계,
  * 한 시군구만 쓰면 해안(또는 외곽). 같은 시도의 시군구끼리만 공유하는 arc는 내부 경계라 제외.
  * 데이터 파이프라인에 시도 레이어를 추가하지 않고도 경계 위계를 그릴 수 있다 (설계서 §4.3).
- * provinceOf를 쓰므로 군위군→대구 보정이 경계에도 반영된다.
+ * 기본 group은 provinceOf라 군위군→대구 보정이 경계에도 반영된다.
  */
-export function sidoBoundaries(topo: Topology, layer?: string): LonLat[][] {
-  const layerName = layer ?? Object.keys(topo.objects)[0];
+export function sidoBoundaries(
+  topo: Topology,
+  opts: { layer?: string; group?: BoundaryGroup; include?: (props: { code: string; name: string }) => boolean } = {},
+): LonLat[][] {
+  const layerName = opts.layer ?? Object.keys(topo.objects)[0];
+  const group = opts.group ?? provinceOf;
   const collection = topo.objects[layerName];
   if (!collection) throw new Error(`TopoJSON layer not found: ${layerName}`);
 
   const users = new Map<number, Set<string>>();
   const refs = new Map<number, number>();
   for (const g of collection.geometries) {
-    const province = provinceOf(g.properties);
+    if (opts.include && !opts.include(g.properties)) continue;
+    const province = group(g.properties);
     const polys = (g.type === 'Polygon' ? [g.arcs] : g.arcs) as number[][][];
     for (const poly of polys)
       for (const ring of poly)
