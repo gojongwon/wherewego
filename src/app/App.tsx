@@ -161,7 +161,7 @@ export function App() {
       )}
 
       <header className="hud">
-        <div className="brand">우리 어디가</div>
+        <h1 className="brand">우리 어디가</h1>
         <div className="hud-end">
           <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
           <button

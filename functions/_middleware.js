@@ -1,10 +1,16 @@
-/** Cloudflare Pages — 카톡/노션 크롤러는 og:image 절대 URL이 필요하다. */
+/** Cloudflare Pages — OG/canonical/sitemap에 요청 origin을 붙인다. */
 export async function onRequest(context) {
   const response = await context.next();
-  const type = response.headers.get('content-type') || '';
-  if (!type.includes('text/html')) return response;
-
   const origin = new URL(context.request.url).origin;
-  const html = (await response.text()).replaceAll('content="/og.jpg"', `content="${origin}/og.jpg"`);
-  return new Response(html, { status: response.status, headers: response.headers });
+  const path = new URL(context.request.url).pathname;
+  const type = response.headers.get('content-type') || '';
+  const rewrite =
+    type.includes('text/html') || path === '/sitemap.xml' || path === '/robots.txt';
+  if (!rewrite) return response;
+
+  let body = (await response.text()).replaceAll('__SITE_ORIGIN__', origin);
+  if (type.includes('text/html')) {
+    body = body.replaceAll('content="/og.jpg"', `content="${origin}/og.jpg"`);
+  }
+  return new Response(body, { status: response.status, headers: response.headers });
 }

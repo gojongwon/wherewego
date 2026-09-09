@@ -3,13 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
-    <title>우리 어디가</title>
-    <meta name="description" content="지도를 향해 화살을 당겨 쏘면 꽂힌 시/군/구가 이번 여행지." />
+    <title>우리 어디가 — 화살로 정하는 국내 여행지</title>
+    <meta name="description" content="지도를 향해 화살을 당겨 쏘면 꽂힌 시/군/구가 이번 여행지. 우리 어디가에서 국내 여행지를 정해 보세요." />
+    <link rel="canonical" href="__SITE_ORIGIN__/" />
     <meta name="theme-color" content="#F6EFDC" />
     <meta name="apple-mobile-web-app-title" content="우리 어디가" />
     <meta property="og:site_name" content="우리 어디가" />
     <meta property="og:title" content="우리 어디가" />
     <meta property="og:description" content="화살을 당겨 쏘고, 꽂힌 곳으로 떠나자." />
+    <meta property="og:url" content="__SITE_ORIGIN__/" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ko_KR" />
     <meta property="og:image" content="/og.jpg" />
@@ -29,9 +31,23 @@
       rel="stylesheet"
       href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap"
     />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "우리 어디가",
+        "alternateName": "Where we go",
+        "url": "__SITE_ORIGIN__/",
+        "description": "지도를 향해 화살을 당겨 쏘면 꽂힌 시/군/구가 이번 여행지.",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "inLanguage": "ko"
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>우리 어디가 — 지도를 향해 화살을 당겨 쏘면 꽂힌 시/군/구가 이번 여행지.</noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
