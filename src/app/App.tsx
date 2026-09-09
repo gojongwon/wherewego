@@ -96,10 +96,19 @@ export function App() {
     [screen, projection],
   );
   const onAgain = useCallback(() => {
+    const resultOpen = (history.state as { wwg?: string } | null)?.wwg === 'result';
+    if (resultOpen || location.search) history.replaceState(null, '', location.pathname);
     dispatch({ type: 'RESET' });
     setRound(newRound());
-    if (location.search) history.replaceState(null, '', location.pathname);
   }, []);
+
+  useEffect(() => {
+    if (state.phase !== 'RESULT') return;
+    if ((history.state as { wwg?: string } | null)?.wwg !== 'result') history.pushState({ wwg: 'result' }, '');
+    const onPop = () => onAgain();
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, [state.phase, onAgain]);
   const onShare = useCallback(async () => {
     const shot = state.shot;
     if (!shot?.hit) return;

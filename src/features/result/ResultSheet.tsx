@@ -23,7 +23,7 @@ export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Prop
   const [lon, lat] = shot?.lonLat ?? [0, 0];
 
   return (
-    <Sheet ref={ref} open={open}>
+    <Sheet ref={ref} open={open} onClose={onAgain}>
       {shot && !region && (
         <>
           <div className="t-eyebrow">헛발</div>

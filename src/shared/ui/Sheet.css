@@ -14,12 +14,28 @@
 .sheet.show {
   transform: translateY(0);
 }
+.sheet.dragging {
+  transition: none;
+}
 .sheet-grip {
+  display: block;
+  width: 96px;
+  height: 28px;
+  margin: 0 auto var(--space-3);
+  touch-action: none;
+  cursor: grab;
+  position: relative;
+}
+.sheet-grip::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
   width: 36px;
   height: 4px;
   border-radius: 2px;
   background: var(--sheet-grip);
-  margin: 0 auto var(--space-3);
+  transform: translate(-50%, -50%);
 }
 @media (prefers-reduced-motion: reduce) {
   .sheet {
