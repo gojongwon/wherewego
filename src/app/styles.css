@@ -66,6 +66,37 @@ body {
   justify-content: space-between;
   pointer-events: none;
 }
+.hud-start {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.map-toggle {
+  pointer-events: auto;
+  display: flex;
+  gap: 2px;
+}
+.map-toggle button {
+  appearance: none;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+.map-toggle button[aria-pressed='true'] {
+  background: color-mix(in srgb, var(--color-bg-surface) 70%, transparent);
+  color: var(--color-text-primary);
+}
+.map-toggle button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
 .brand {
   margin: 0;
   font-family: var(--font-family-display);

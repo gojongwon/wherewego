@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { LAYOUT, PARAMS } from '@/shared/params';
 import { haversineKm } from '@/shared/geo';
-import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, REGIONS, SIDO_BOUNDARIES, fitMercator, toScreen } from '@/features/map';
+import { PACKS, parseMapId, MAP_STORAGE_KEY, fitMercator, toScreen, type MapId } from '@/features/map';
 import { InputLayer, createAimState, parseEventParam, parseSlowParam, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, parseReplayParams } from '@/features/result';
@@ -20,6 +20,23 @@ export function App() {
   const [forceEvent] = useState(() => (import.meta.env.DEV ? parseEventParam(location.search) : undefined));
   const [slow] = useState(() => (import.meta.env.DEV ? parseSlowParam(location.search) : 1));
   const [infoOpen, setInfoOpen] = useState(false);
+  const [mapId, setMapId] = useState<MapId>(() => {
+    const fromUrl = parseMapId(new URLSearchParams(location.search).get('map'));
+    if (fromUrl) return fromUrl;
+    try {
+      return parseMapId(localStorage.getItem(MAP_STORAGE_KEY)) ?? 'kr';
+    } catch {
+      return 'kr';
+    }
+  });
+  const pack = PACKS[mapId];
+  useEffect(() => {
+    try {
+      localStorage.setItem(MAP_STORAGE_KEY, mapId);
+    } catch {
+      /* private mode */
+    }
+  }, [mapId]);
   // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
   const [aim] = useState(createAimState);
 
@@ -45,11 +62,16 @@ export function App() {
   const projection = useMemo(
     () =>
       layout
-        ? fitMercator(REGIONS, layout.mapBox, { extent: MAINLAND_EXTENT, align: 'top', centerLon: MAINLAND_CENTER_LON })
+        ? fitMercator(pack.regions, layout.mapBox, {
+            extent: pack.extent,
+            align: 'top',
+            centerLon: pack.centerLon,
+            rotateDeg: pack.rotateDeg,
+          })
         : null,
-    [layout],
+    [layout, pack],
   );
-  const screen = useMemo(() => (projection ? toScreen(REGIONS, projection) : null), [projection]);
+  const screen = useMemo(() => (projection ? toScreen(pack.regions, projection) : null), [projection, pack]);
 
   // ---- 공유 URL 재현: 첫 레이아웃이 잡히면 1회
   const replayed = useRef(false);
@@ -88,10 +110,32 @@ export function App() {
   );
   const onAgain = useCallback(() => {
     const resultOpen = (history.state as { wwg?: string } | null)?.wwg === 'result';
-    if (resultOpen || location.search) history.replaceState(null, '', location.pathname);
+    if (resultOpen || location.search) {
+      const q = new URLSearchParams(location.search);
+      q.delete('lat');
+      q.delete('lng');
+      const qs = q.toString();
+      history.replaceState(null, '', location.pathname + (qs ? `?${qs}` : ''));
+    }
     dispatch({ type: 'RESET' });
     setRound(newRound());
   }, []);
+
+  const selectMap = useCallback(
+    (id: MapId) => {
+      if (id === mapId) return;
+      setMapId(id);
+      const url = new URL(location.href);
+      if (id === 'kr') url.searchParams.delete('map');
+      else url.searchParams.set('map', id);
+      url.searchParams.delete('lat');
+      url.searchParams.delete('lng');
+      history.replaceState(null, '', url.pathname + url.search);
+      dispatch({ type: 'RESET' });
+      setRound(newRound());
+    },
+    [mapId],
+  );
 
   useEffect(() => {
     if (state.phase !== 'RESULT') return;
@@ -116,7 +160,8 @@ export function App() {
       className="stage"
       ref={stageRef}
       data-phase={state.phase}
-      data-hit={hitIndex !== null ? REGIONS[hitIndex].code : ''}
+      data-map={pack.id}
+      data-hit={hitIndex !== null ? pack.regions[hitIndex].code : ''}
       data-compact={layout?.compact ? '1' : '0'}
       style={
         layout
@@ -131,10 +176,10 @@ export function App() {
             height={layout.height}
             anchor={layout.anchor}
             dMax={layout.dMax}
-            regions={REGIONS}
+            regions={pack.regions}
             screen={screen}
             projection={projection}
-            boundaries={SIDO_BOUNDARIES}
+            boundaries={pack.boundaries}
             aim={aim}
             windNow={windNow}
             phase={state.phase}
@@ -161,7 +206,17 @@ export function App() {
       )}
 
       <header className="hud">
-        <h1 className="brand">우리 어디가</h1>
+        <div className="hud-start">
+          <h1 className="brand">우리 어디가</h1>
+          <div className="map-toggle" role="group" aria-label="지도">
+            <button type="button" aria-pressed={pack.id === 'kr'} onClick={() => selectMap('kr')}>
+              한국
+            </button>
+            <button type="button" aria-pressed={pack.id === 'jp'} onClick={() => selectMap('jp')}>
+              일본
+            </button>
+          </div>
+        </div>
         <div className="hud-end">
           <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
           <button
@@ -179,7 +234,7 @@ export function App() {
         <div className="info-pop" role="dialog" aria-label="정보">
           <b>우리 어디가</b> v0.2 · Where we go
           <br />
-          경계 데이터: 통계청 SGIS(2018) · southkorea-maps
+          경계 데이터: {pack.sourceLabel}
         </div>
       )}
 
@@ -190,7 +245,9 @@ export function App() {
       <ResultSheet
         ref={sheetRef}
         shot={state.shot}
-        regions={REGIONS}
+        regions={pack.regions}
+        titleOf={pack.title}
+        subtitleOf={pack.subtitle}
         open={state.phase === 'RESULT'}
         onAgain={onAgain}
       />

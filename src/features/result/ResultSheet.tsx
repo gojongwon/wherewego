@@ -1,7 +1,7 @@
 import type { Ref } from 'react';
 import { PARAMS } from '@/shared/params';
 import { Button, Sheet } from '@/shared/ui';
-import { prettyName, provinceOf, type Region } from '@/features/map';
+import type { Region } from '@/features/map';
 import { EVENT_LABEL } from '@/features/shooter';
 import type { Shot } from '@/app/gameReducer';
 import './ResultSheet.css';
@@ -9,6 +9,8 @@ import './ResultSheet.css';
 interface Props {
   shot: Shot | null;
   regions: readonly Region[];
+  titleOf: (region: Region) => string;
+  subtitleOf: (region: Region) => string;
   open: boolean;
   onAgain: () => void;
   /** App이 높이를 읽어 지도 시프트에 쓴다 */
@@ -16,7 +18,7 @@ interface Props {
 }
 
 /** 결과 바텀시트 (설계서 §4.4) */
-export function ResultSheet({ shot, regions, open, onAgain, ref }: Props) {
+export function ResultSheet({ shot, regions, titleOf, subtitleOf, open, onAgain, ref }: Props) {
   const region = shot?.hit ? regions[shot.hit.index] : null;
   const [lon, lat] = shot?.lonLat ?? [0, 0];
 
@@ -49,10 +51,10 @@ export function ResultSheet({ shot, regions, open, onAgain, ref }: Props) {
         <>
           <div className="t-eyebrow">이번 여행지</div>
           <h1 className="place t-display" data-testid="place">
-            {prettyName(region.name)}
+            {titleOf(region)}
           </h1>
           <div className="prov" data-testid="prov">
-            {provinceOf(region)}
+            {subtitleOf(region)}
           </div>
           <dl className="meta">
             <dt>좌표</dt>

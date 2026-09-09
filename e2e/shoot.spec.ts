@@ -22,8 +22,16 @@ test.beforeEach(async ({ page }) => {
 test('첫 화면: 지도 249개 시군구와 안내 힌트', async ({ page }) => {
   await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '249');
   await expect(page.locator('.stage')).toHaveAttribute('data-phase', 'IDLE');
+  await expect(page.locator('.stage')).toHaveAttribute('data-map', 'kr');
   await expect(page.getByTestId('hint')).toContainText('아래로 당겼다 놓으면');
   await expect(page.getByTestId('wind')).toContainText(/km/);
+});
+
+test('일본 지도: 도도부현 46', async ({ page }) => {
+  await page.goto('/?map=jp');
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-ready', '1', { timeout: 10_000 });
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '46');
+  await expect(page.locator('.stage')).toHaveAttribute('data-map', 'jp');
 });
 
 test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', async ({ page }) => {
