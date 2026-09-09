@@ -1,7 +1,7 @@
 {
   "name": "where-we-go",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "우리 어디가 — 지도에 화살을 당겨 쏘아 여행지를 정하는 모바일 웹 게임",
   "scripts": {

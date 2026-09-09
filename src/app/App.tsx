@@ -177,9 +177,9 @@ export function App() {
       </header>
       {infoOpen && (
         <div className="info-pop" role="dialog" aria-label="정보">
-          <b>우리 어디가</b> v0.1 · Where we go
+          <b>우리 어디가</b> v0.2 · Where we go
           <br />
-          경계 데이터: 통계청 SGIS(2018) · southkorea-maps · 게임용 단순화
+          경계 데이터: 통계청 SGIS(2018) · southkorea-maps
         </div>
       )}
 
