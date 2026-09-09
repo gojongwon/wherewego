@@ -4,7 +4,7 @@ import { sidoBoundaries } from './boundaries';
 
 export type { Region, Topology } from './topo';
 export { decodeTopo } from './topo';
-export { fitMercator, MAINLAND_EXTENT, type Projection, type Box, type Extent, type FitOptions } from './projection';
+export { fitMercator, MAINLAND_EXTENT, MAINLAND_CENTER_LON, type Projection, type Box, type Extent, type FitOptions } from './projection';
 export { sidoBoundaries } from './boundaries';
 export { toScreen, findRegion, pointInRegion, inRing, type ScreenRegion, type Hit } from './region';
 export { provinceOf, prettyName, fullName, PROVINCE_BY_CODE, PROVINCE_OVERRIDE } from './names';

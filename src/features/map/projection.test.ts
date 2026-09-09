@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { REGIONS } from './index';
-import { MAINLAND_EXTENT, fitMercator } from './projection';
+import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, fitMercator } from './projection';
 
 const box = { x: 18, y: 105, width: 354, height: 520 };
 
@@ -69,5 +69,22 @@ describe('fitMercator — 본토 기준 extent + bottom 정렬 (A안)', () => {
     const back = proj.invert(proj.project(p));
     expect(back[0]).toBeCloseTo(p[0], 6);
     expect(back[1]).toBeCloseTo(p[1], 6);
+  });
+});
+
+describe('fitMercator — centerLon (가로 시각 중심 보정)', () => {
+  const base = fitMercator(REGIONS, box, { extent: MAINLAND_EXTENT, align: 'bottom' });
+  const proj = fitMercator(REGIONS, box, { extent: MAINLAND_EXTENT, align: 'bottom', centerLon: MAINLAND_CENTER_LON });
+
+  it('centerLon이 box 가로 중앙에 오고 축척은 같다', () => {
+    expect(proj.project([MAINLAND_CENTER_LON, 36])[0]).toBeCloseTo(box.x + box.width / 2, 6);
+    expect(proj.k).toBeCloseTo(base.k, 9);
+  });
+  it('extent 중앙보다 동쪽이라 지도 전체가 오른쪽으로 옮겨진다 (서해 섬에 여백)', () => {
+    const lon = (MAINLAND_EXTENT.lon[0] + MAINLAND_EXTENT.lon[1]) / 2;
+    expect(proj.project([lon, 36])[0]).toBeLessThan(base.project([lon, 36])[0]);
+    const shift = base.project([lon, 36])[0] - proj.project([lon, 36])[0];
+    expect(shift).toBeGreaterThan(5);
+    expect(shift).toBeLessThan(25);
   });
 });
