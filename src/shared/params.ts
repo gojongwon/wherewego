@@ -54,10 +54,12 @@ export interface GameParams {
 
 export const PARAMS: GameParams = {
   deadZone: 18,
-  pMax: 170,
+  // 당김 150px에서 최대 사거리 — 활 근처에서 시작해도 지도 북단까지 닿는다 (전 170)
+  pMax: 150,
   gamma: 1.2,
   dMinPx: 50,
-  overshootPx: 40,
+  // 지도 북단 위로 넘어갈 수 있는 여유 — 동북·서북 모서리까지 조준 범위를 넓힘 (전 40)
+  overshootPx: 80,
   wind: { maxPx: 60, residualSigma: 0.01, periodsSec: [7, 2.9, 5.3] },
   events: {
     rate: 0.55,

@@ -33,16 +33,15 @@ export interface FitOptions {
 /**
  * 본토+제주 기준 범위 (설계서 §4.3 A안). 서해 5도·가거도 등 먼 섬을 fit에서 빼 한반도를 가운데에 크게 놓는다.
  * 섬 자체는 그대로 그려진다 — 화면 밖으로 나가는 것만 허용.
- * 경도는 본토(126.09~129.58)보다 양쪽으로 0.2° 넉넉하게: 폰(세로 제한)에서는 영향이 없고,
- * 넓고 긴 창(가로 제한)에서 서남해 섬이 화면 가장자리에 잘리지 않게 여백을 만든다.
+ * 범위를 넓히면 지도가 작아져 조준이 어려워지므로 본토에 딱 맞춘다 (지도 크기 우선).
  */
-export const MAINLAND_EXTENT: Extent = { lon: [125.9, 129.75], lat: [33.15, 38.65] };
+export const MAINLAND_EXTENT: Extent = { lon: [126.05, 129.65], lat: [33.15, 38.65] };
 
 /**
- * 화면 가로 중앙에 둘 경도. extent 중앙(127.825)보다 살짝 동쪽인 이유: 서해안은 섬과 리아스식 해안이 왼쪽으로 퍼지고
- * 동해안은 매끈해서, 기하학적으로 가운데여도 눈에는 왼쪽으로 치우쳐 보인다. 본토 여백이 왼쪽 ≈30px / 오른쪽 ≈43px 정도가 된다.
+ * 화면 가로 중앙에 둘 경도. extent 중앙(127.85)보다 동쪽인 이유: 서해안은 섬과 리아스식 해안이 왼쪽으로 퍼지고
+ * 동해안은 매끈해서, 기하학적으로 가운데여도 눈에는 왼쪽으로 치우쳐 보인다. 축척은 그대로, 위치만 ≈10px 오른쪽.
  */
-export const MAINLAND_CENTER_LON = 127.9;
+export const MAINLAND_CENTER_LON = 127.95;
 
 const mercY = (lat: number): number => Math.log(Math.tan(Math.PI / 4 + (lat * D2R) / 2));
 const invLat = (my: number): number => (2 * Math.atan(Math.exp(my)) - Math.PI / 2) / D2R;
