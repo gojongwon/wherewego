@@ -1,4 +1,4 @@
-/* 바람 칩 — 활 옆 (위치는 App의 .wind-dock이 앵커 기준으로 잡는다) */
+/* 바람 칩 — 헤더 우측 (정보 버튼 왼쪽) */
 .wind {
   display: inline-flex;
   align-items: center;

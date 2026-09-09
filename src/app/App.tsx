@@ -173,15 +173,18 @@ export function App() {
 
       <header className="hud">
         <div className="brand">우리 어디가</div>
-        <button
-          type="button"
-          className="info-btn"
-          aria-label="정보"
-          aria-expanded={infoOpen}
-          onClick={() => setInfoOpen((v) => !v)}
-        >
-          i
-        </button>
+        <div className="hud-end">
+          <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
+          <button
+            type="button"
+            className="info-btn"
+            aria-label="정보"
+            aria-expanded={infoOpen}
+            onClick={() => setInfoOpen((v) => !v)}
+          >
+            i
+          </button>
+        </div>
       </header>
       {infoOpen && (
         <div className="info-pop" role="dialog" aria-label="정보">
@@ -191,17 +194,6 @@ export function App() {
         </div>
       )}
 
-      {layout && (
-        <div
-          className="wind-dock"
-          style={{
-            left: layout.anchor[0] + LAYOUT.windChipOffset[0],
-            top: layout.anchor[1] + LAYOUT.windChipOffset[1],
-          }}
-        >
-          <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
-        </div>
-      )}
       <p className="hint" data-testid="hint">
         <HintText hint={state.hint} />
       </p>

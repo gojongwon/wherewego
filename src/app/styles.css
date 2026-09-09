@@ -73,6 +73,11 @@ body {
   line-height: 1;
   color: var(--color-text-primary);
 }
+.hud-end {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 .info-btn {
   pointer-events: auto;
   appearance: none;
@@ -111,7 +116,7 @@ body {
   color: var(--color-text-primary);
 }
 
-/* ---------- 활 주변: 힌트는 활 아래(당기는 자리), 바람 칩은 활 옆 ---------- */
+/* ---------- 활 주변: 힌트는 활 아래(당기는 자리) ---------- */
 .hint {
   position: absolute;
   left: 0;
@@ -133,8 +138,4 @@ body {
 .stage[data-compact='1'] .hint {
   font-size: var(--font-size-xs);
   top: calc(var(--anchor-y) + 56px);
-}
-.wind-dock {
-  position: absolute;
-  pointer-events: none;
 }

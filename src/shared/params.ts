@@ -89,8 +89,6 @@ export const LAYOUT = {
   mapBottomGapCompact: 52,
   /** 활 아래 힌트 위치 (앵커 기준 px) */
   hintBelowAnchor: 64,
-  /** 바람 칩 위치 (앵커 기준 px) — 활 오른쪽 옆 */
-  windChipOffset: [84, -14] as readonly [number, number],
   /** 지도 좌우 패딩 */
   mapPad: 18,
   /** 데스크톱에서 세로 스테이지 최대 폭 */

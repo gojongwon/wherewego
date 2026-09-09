@@ -14,7 +14,7 @@ interface Props {
 export const windDots = (len: number): number => (len < 0.34 ? 1 : len < 0.67 ? 2 : 3);
 
 /**
- * 바람 칩 — 활 옆에 붙는 작은 표시 (A안). 방향은 화살표 회전, 세기는 점 3개.
+ * 바람 칩 — 헤더 우측. 방향은 화살표 회전, 세기는 점 3개.
  * 정확한 km는 시각적으로 빼고(숫자보다 감각) 보조기술용 텍스트로만 남긴다.
  * active일 때만 rAF로 DOM을 직접 갱신(setState 없음).
  */
