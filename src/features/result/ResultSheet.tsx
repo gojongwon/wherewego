@@ -1,10 +1,9 @@
 import type { Ref } from 'react';
 import { PARAMS } from '@/shared/params';
 import { Button, Sheet } from '@/shared/ui';
-import { fullName, prettyName, provinceOf, type Region } from '@/features/map';
+import { prettyName, provinceOf, type Region } from '@/features/map';
 import { EVENT_LABEL } from '@/features/shooter';
 import type { Shot } from '@/app/gameReducer';
-import { kakaoMapUrl } from './deeplink';
 import './ResultSheet.css';
 
 interface Props {
@@ -12,13 +11,12 @@ interface Props {
   regions: readonly Region[];
   open: boolean;
   onAgain: () => void;
-  onShare: () => void;
   /** App이 높이를 읽어 지도 시프트에 쓴다 */
   ref?: Ref<HTMLElement>;
 }
 
 /** 결과 바텀시트 (설계서 §4.4) */
-export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Props) {
+export function ResultSheet({ shot, regions, open, onAgain, ref }: Props) {
   const region = shot?.hit ? regions[shot.hit.index] : null;
   const [lon, lat] = shot?.lonLat ?? [0, 0];
 
@@ -87,12 +85,6 @@ export function ResultSheet({ shot, regions, open, onAgain, onShare, ref }: Prop
         <Button variant="primary" onClick={onAgain} data-testid="again">
           다시 쏘기
         </Button>
-        {region && shot && (
-          <>
-            <Button href={kakaoMapUrl(fullName(region), shot.lonLat)}>카카오맵</Button>
-            <Button onClick={onShare}>공유</Button>
-          </>
-        )}
       </div>
     </Sheet>
   );

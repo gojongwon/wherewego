@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { LAYOUT, PARAMS } from '@/shared/params';
 import { haversineKm } from '@/shared/geo';
-import { Toast } from '@/shared/ui';
-import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, REGIONS, SIDO_BOUNDARIES, fitMercator, fullName, toScreen } from '@/features/map';
-import { InputLayer, createAimState, parseEventParam, parseSlowParam, EVENT_LABEL, type ShotGeometry } from '@/features/shooter';
+import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, REGIONS, SIDO_BOUNDARIES, fitMercator, toScreen } from '@/features/map';
+import { InputLayer, createAimState, parseEventParam, parseSlowParam, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
-import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
+import { ResultSheet, parseReplayParams } from '@/features/result';
 import { WindGauge, newRound, windAt } from '@/features/wind';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
@@ -80,14 +79,6 @@ export function App() {
     setShiftY(Math.max(0, py + 36 - (layout.height - sheetH)));
   }, [state.phase, state.shot, layout]);
 
-  // ---- 토스트
-  const [toast, setToast] = useState<string | null>(null);
-  useEffect(() => {
-    if (!toast) return;
-    const t = setTimeout(() => setToast(null), 1800);
-    return () => clearTimeout(t);
-  }, [toast]);
-
   const onFire = useCallback(
     (geometry: ShotGeometry) => {
       if (!screen || !projection) return;
@@ -109,18 +100,6 @@ export function App() {
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
   }, [state.phase, onAgain]);
-  const onShare = useCallback(async () => {
-    const shot = state.shot;
-    if (!shot?.hit) return;
-    const region = REGIONS[shot.hit.index];
-    const url = buildShareUrl(shot.lonLat);
-    const ev = shot.geometry.event;
-    const text = `이번 여행지는 ${fullName(region)}! 🏹${ev ? ` (${EVENT_LABEL[ev.kind]} 맞고도)` : ''}`;
-    const outcome = await shareResult({ title: '우리 어디가', text, url });
-    if (outcome === 'copied') setToast('링크를 복사했어요');
-    else if (outcome === 'failed') setToast(url);
-  }, [state.shot]);
-
   const hitIndex = state.shot?.hit && state.phase !== 'FLYING' ? state.shot.hit.index : null;
   const kmPerPx = useMemo(() => {
     if (!projection || !layout) return 1;
@@ -214,9 +193,7 @@ export function App() {
         regions={REGIONS}
         open={state.phase === 'RESULT'}
         onAgain={onAgain}
-        onShare={onShare}
       />
-      <Toast message={toast} />
     </div>
   );
 }

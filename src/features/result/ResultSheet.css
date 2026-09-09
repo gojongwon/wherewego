@@ -31,13 +31,8 @@
   color: var(--color-text-accent);
 }
 .actions {
-  display: flex;
-  gap: var(--space-3);
   margin-top: var(--space-4);
 }
 .actions .btn {
-  flex: 1;
-}
-.actions .btn-primary {
-  flex: 1.4;
+  width: 100%;
 }

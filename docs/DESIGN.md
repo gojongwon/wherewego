@@ -289,9 +289,8 @@ Pe = anchor + (L0−anchor)·easeOut(at)
 
 ## 8. 결과 · 공유
 
-- **공유 URL**: `?lat=37.75190&lng=128.87610` (소수 5자리). 페이지 로드 시 파라미터가 있으면 비행 없이 `land(pt, pt)` → 같은 결과 재현. 서버 불필요.
-- **Web Share API** → 미지원 시 `navigator.clipboard` → 실패 시 URL 토스트.
-- **카카오맵 딥링크**: `https://map.kakao.com/link/map/{이름},{lat},{lng}`. (네이버는 2단계에서 검토.)
+- **공유 URL 재현**: `?lat=37.75190&lng=128.87610`(소수 5자리)로 들어오면 비행 없이 `land(pt, pt)` → 같은 결과 재현. 서버 불필요.
+- **공유·딥링크 UI는 없다**: Web Share·클립보드·카카오맵 버튼을 1단계에서 뺐다. 결과 시트는 '다시 쏘기' 하나. URL을 읽는 쪽만 남긴다.
 - **OG 이미지**: 정적 `public/og.jpg`(1200×630). 카톡·노션용 절대 URL은 Cloudflare Pages `functions/_middleware.js`가 요청 origin으로 채운다. 결과별 이미지는 2단계.
 
 ---
@@ -355,8 +354,7 @@ src/
       SceneLayer.tsx       # <Canvas frameloop="demand"> 조립, data-ready/data-region-count
     result/
       ResultSheet.tsx      # 바텀시트 내용 (shared/ui Sheet·Button 사용)
-      share.ts             # buildShareUrl, parseReplayParams, shareResult(Web Share→클립보드)
-      deeplink.ts          # kakaoMapUrl
+      replay.ts            # parseReplayParams (?lat&lng → 결과 재현)
   shared/
     params.ts           # PARAMS(튜닝 표) + LAYOUT + SCENE 상수 — 단일 출처
     geo.ts              # haversineKm, clamp, 타입
