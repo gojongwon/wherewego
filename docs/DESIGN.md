@@ -292,7 +292,7 @@ Pe = anchor + (L0−anchor)·easeOut(at)
 - **공유 URL**: `?lat=37.75190&lng=128.87610` (소수 5자리). 페이지 로드 시 파라미터가 있으면 비행 없이 `land(pt, pt)` → 같은 결과 재현. 서버 불필요.
 - **Web Share API** → 미지원 시 `navigator.clipboard` → 실패 시 URL 토스트.
 - **카카오맵 딥링크**: `https://map.kakao.com/link/map/{이름},{lat},{lng}`. (네이버는 2단계에서 검토.)
-- **OG 이미지**: v1은 정적 한 장. 결과별 이미지는 Cloudflare Pages Functions(엣지에서 SVG→PNG)로 2단계. 이것이 GitHub Pages ↔ Cloudflare 선택의 실질적 분기점.
+- **OG 이미지**: 정적 `public/og.jpg`(1200×630). 카톡·노션용 절대 URL은 Cloudflare Pages `functions/_middleware.js`가 요청 origin으로 채운다. 결과별 이미지는 2단계.
 
 ---
 
