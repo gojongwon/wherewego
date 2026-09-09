@@ -3,7 +3,7 @@ import { LAYOUT, PARAMS } from '@/shared/params';
 import { haversineKm } from '@/shared/geo';
 import { Toast } from '@/shared/ui';
 import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, REGIONS, SIDO_BOUNDARIES, fitMercator, fullName, toScreen } from '@/features/map';
-import { InputLayer, createAimState, parseEventParam, EVENT_LABEL, type ShotGeometry } from '@/features/shooter';
+import { InputLayer, createAimState, parseEventParam, parseSlowParam, EVENT_LABEL, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, buildShareUrl, parseReplayParams, shareResult } from '@/features/result';
 import { WindGauge, newRound, windAt } from '@/features/wind';
@@ -19,6 +19,7 @@ export function App() {
   phaseRef.current = state.phase;
   const [round, setRound] = useState(newRound);
   const [forceEvent] = useState(() => (import.meta.env.DEV ? parseEventParam(location.search) : undefined));
+  const [slow] = useState(() => (import.meta.env.DEV ? parseSlowParam(location.search) : 1));
   const [infoOpen, setInfoOpen] = useState(false);
   // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
   const [aim] = useState(createAimState);
@@ -151,6 +152,7 @@ export function App() {
             shot={state.shot}
             hitIndex={hitIndex}
             shiftY={shiftY}
+            slow={slow}
             onFlightEnd={() => dispatch({ type: 'LAND' })}
           />
           <InputLayer

@@ -60,7 +60,24 @@
   --motion-duration-base: 250ms;
   --motion-duration-slow: 380ms;
   --motion-easing-out: cubic-bezier(0.2, 0.8, 0.2, 1);
-  --map-actor-finger: #e8b89a;
+  --map-actor-plane: #ffffff; /** 종이비행기 왼 날개 */
+  --map-actor-plane-shade: #efe6d2; /** 오른 날개 (그늘진 접힌 면) */
+  --map-actor-plane-under: #e3d8be; /** 아래 킬 */
+  --map-actor-plane-crease: #b8a98c; /** 접힌 선 */
+  --map-actor-skin: #f1cdb0;
+  --map-actor-skin-shade: #ddae8c; /** 마디 주름, 접힌 손가락 */
+  --map-actor-skin-outline: #c48e68; /** 손 카툰 외곽선(인버티드 헐) */
+  --map-actor-nail: #f9e2d5;
+  --map-actor-sleeve: #5f7683;
+  --map-actor-sleeve-dark: #4e6470; /** 커프 */
+  --map-actor-gull: #ffffff;
+  --map-actor-gull-shade: #dcd8cf; /** 꼬리·깃털 */
+  --map-actor-beak: #e8a23a;
+  --map-actor-gust: #8fa9b8; /** 회오리 줄기 */
+  --map-actor-gust-light: #b8cbd6;
+  --map-actor-leaf: #a8c39a; /** 돌풍 잔해 */
+  --map-actor-petal: #f3d9a0;
+  --map-actor-spark: #ffffff; /** 접촉 불꽃(종이비행기) */
   --map-shadow-opacity: 0.25;
   --button-height: 44px; /** 터치 타깃 (설계서 §10.1) */
   --color-bg-canvas: var(--color-paper-100);
@@ -97,9 +114,7 @@
   --map-bow-string: var(--color-ink-900);
   --map-impact: var(--color-stamp-500);
   --map-pin-miss: var(--color-ink-500);
-  --map-actor-plane: var(--color-paper-50);
-  --map-actor-gull: var(--color-ink-900);
-  --map-actor-gust: var(--color-ink-300);
+  --map-actor-gull-tip: var(--color-ink-900); /** 날개 끝 */
   --map-shadow-color: var(--color-ink-900);
   --sheet-radius: var(--radius-lg);
   --sheet-shadow: var(--shadow-lift);

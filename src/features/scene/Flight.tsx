@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { invalidate, useFrame } from '@react-three/fiber';
 import { CircleGeometry, type InstancedMesh, type Mesh, RingGeometry } from 'three';
 import type { Point } from '@/shared/geo';
@@ -29,6 +29,8 @@ interface Props {
   dMax: number;
   width: number;
   reduced: boolean;
+  /** dev 전용 비행 시간 배율 */
+  slow?: number;
   onFlightEnd: () => void;
 }
 
@@ -36,7 +38,7 @@ interface Props {
  * 비행 화살 + 그림자 + 궤적 리본 + 임팩트 링 + 핀(=같은 화살 메시) + 조준점 잔상 + 스냅 점선.
  * 착지점은 이미 확정(설계서 §5.4) — 여기서는 그 지점으로 가는 연출만. 프레임 갱신은 전부 ref.
  */
-export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd }: Props) {
+export function Flight({ phase, shot, anchor, dMax, width, reduced, slow = 1, onFlightEnd }: Props) {
   const arrow = useRef<Mesh>(null);
   const shadow = useRef<Mesh>(null);
   const trail = useRef<Mesh>(null);
@@ -45,6 +47,11 @@ export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd 
   const ribbon = useMemo(() => new Ribbon(), []);
   useEffect(() => () => ribbon.dispose(), [ribbon]);
   const fly = useRef<{ t0: number; T: number; apexH: number; hitEvent: boolean } | null>(null);
+  /** 돌풍 등 사건이 요청한 화살 스핀 — 남은 각(rad)과 누적 롤 */
+  const spin = useRef({ left: 0, roll: 0 });
+  const onArrowSpin = useCallback((turns: number) => {
+    spin.current.left += turns * Math.PI * 2;
+  }, []);
   const impactT0 = useRef<number | null>(null);
 
   // 상태 전환에 따른 1회성 배치. 비행 자체는 useFrame.
@@ -66,10 +73,11 @@ export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd 
       const extra = shot.geometry.event ? PARAMS.events.extraMs : 0;
       fly.current = {
         t0: performance.now(),
-        T: flightTime(d, dMax, PARAMS) + extra,
+        T: (flightTime(d, dMax, PARAMS) + extra) * slow,
         apexH: apexHeight(d, PARAMS.apexRatio),
         hitEvent: false,
       };
+      spin.current = { left: 0, roll: 0 };
       ribbon.reset();
       a.visible = s.visible = true;
       t.visible = !reduced;
@@ -96,11 +104,17 @@ export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, shot]);
 
-  useFrame(() => {
+  useFrame((_, dt) => {
     const now = performance.now();
     const f = fly.current;
     if (f && shot && arrow.current && shadow.current) {
       const tau = reduced ? 1 : Math.min(1, (now - f.t0) / f.T);
+      // 사건 스핀: 남은 각을 14 rad/s로 소진
+      if (spin.current.left > 0) {
+        const dq = Math.min(spin.current.left, 14 * Math.min(dt, 0.05));
+        spin.current.roll += dq;
+        spin.current.left -= dq;
+      }
       const pose = flightPose(tau, anchor, shot.geometry.landing, f.apexH, PIN_PITCH, shot.geometry.event);
       const ev = shot.geometry.event;
       if (ev && !f.hitEvent && tau >= ev.at) {
@@ -109,7 +123,7 @@ export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd 
       }
       const a = arrow.current;
       a.position.set(pose.x, pose.y, pose.z);
-      a.rotation.set(0, pose.yaw, pose.pitch, 'YZX');
+      a.rotation.set(spin.current.roll, pose.yaw, pose.pitch, 'YZX');
       const s = 1 + PARAMS.apexScale * pose.h;
       a.scale.setScalar(s);
       const sh = shadow.current;
@@ -170,7 +184,7 @@ export function Flight({ phase, shot, anchor, dMax, width, reduced, onFlightEnd 
         visible={false}
       />
       {phase === 'FLYING' && ev && pe && !reduced && (
-        <EventActor event={ev} Pe={pe.Pe} heightAtPe={pe.h} stageW={width} flyRef={fly} />
+        <EventActor event={ev} Pe={pe.Pe} heightAtPe={pe.h} stageW={width} flyRef={fly} onArrowSpin={onArrowSpin} />
       )}
       {landed && shot && pin && (
         <>

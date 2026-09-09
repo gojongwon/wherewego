@@ -60,6 +60,12 @@ export function parseEventParam(search: string): EventKind | undefined {
   return EVENT_KINDS.find((k) => k === v);
 }
 
+/** dev 전용 `?slow=3` — 비행 시간 배율 (연출 검토용). 1..10 밖이면 1 */
+export function parseSlowParam(search: string): number {
+  const v = Number(new URLSearchParams(search.startsWith('?') ? search : `?${search}`).get('slow'));
+  return Number.isFinite(v) && v >= 1 && v <= 10 ? v : 1;
+}
+
 /** 바람 세기 → 사건 확률. 무풍이면 rate, |w|=maxPx이면 rateWindy. */
 export function eventRateForWind(wind: Point, P: GameParams): number {
   const t = P.wind.maxPx > 0 ? clamp(Math.hypot(wind[0], wind[1]) / P.wind.maxPx, 0, 1) : 0;

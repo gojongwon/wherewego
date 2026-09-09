@@ -12,6 +12,7 @@ export {
   sampleEvent,
   eventRateForWind,
   parseEventParam,
+  parseSlowParam,
   EVENT_KINDS,
   EVENT_LABEL,
   type ShotGeometry,

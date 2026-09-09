@@ -29,6 +29,8 @@ interface Props {
   shot: Shot | null;
   hitIndex: number | null;
   shiftY: number;
+  /** dev 전용 비행 시간 배율 (연출 검토) */
+  slow?: number;
   onFlightEnd: () => void;
 }
 
@@ -37,7 +39,7 @@ interface Props {
  * frameloop="demand": IDLE에서는 프레임을 그리지 않는다. 갱신이 필요한 쪽이 invalidate()를 부른다.
  */
 export function SceneLayer(props: Props) {
-  const { width, height, anchor, dMax, regions, screen, projection, boundaries, aim, phase, shot, hitIndex, shiftY, onFlightEnd } = props;
+  const { width, height, anchor, dMax, regions, screen, projection, boundaries, aim, phase, shot, hitIndex, shiftY, slow = 1, onFlightEnd } = props;
   const [ready, setReady] = useState(false);
   const reduced = useReducedMotion();
   return (
@@ -65,7 +67,7 @@ export function SceneLayer(props: Props) {
         <Terrain regions={regions} screen={screen} projection={projection} boundaries={boundaries} hitIndex={hitIndex} reduced={reduced} />
         <Bow anchor={anchor} aim={aim} phase={phase} />
         <AimGuide anchor={anchor} aim={aim} />
-        <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} width={width} reduced={reduced} onFlightEnd={onFlightEnd} />
+        <Flight phase={phase} shot={shot} anchor={anchor} dMax={dMax} width={width} reduced={reduced} slow={slow} onFlightEnd={onFlightEnd} />
       </Canvas>
     </div>
   );

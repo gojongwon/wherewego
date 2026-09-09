@@ -3,6 +3,7 @@ import { invalidate, useFrame, useThree } from '@react-three/fiber';
 import { MathUtils, type OrthographicCamera } from 'three';
 import { SCENE } from '@/shared/params';
 import { orthoCamera } from './camera';
+import { cameraShake } from './fx';
 
 interface Props {
   width: number;
@@ -17,7 +18,7 @@ export function CameraRig({ width, height, shiftY, reduced }: Props) {
   const camera = useThree((s) => s.camera) as OrthographicCamera;
   const cur = useRef(0);
 
-  const apply = (shift: number) => {
+  const apply = (shift: number, jx = 0, jz = 0) => {
     const c = orthoCamera(width, height, SCENE.pitchDeg, shift);
     camera.left = c.left;
     camera.right = c.right;
@@ -25,8 +26,9 @@ export function CameraRig({ width, height, shiftY, reduced }: Props) {
     camera.bottom = c.bottom;
     camera.near = c.near;
     camera.far = c.far;
-    camera.position.set(...c.position);
-    camera.lookAt(...c.target);
+    // 사건 접촉 흔들림: 지면 평행 지터 (px) — 카메라와 타깃을 같이 옮겨 화면 전체가 흔들린다
+    camera.position.set(c.position[0] + jx, c.position[1], c.position[2] + jz);
+    camera.lookAt(c.target[0] + jx, c.target[1], c.target[2] + jz);
     camera.updateProjectionMatrix();
   };
 
@@ -41,11 +43,14 @@ export function CameraRig({ width, height, shiftY, reduced }: Props) {
   }, [shiftY]);
 
   useFrame((_, dt) => {
-    if (cur.current === shiftY) return;
+    const shaking = cameraShake.amp > 0 && !reduced;
+    if (cur.current === shiftY && !shaking) return;
     const next = reduced ? shiftY : MathUtils.damp(cur.current, shiftY, 12, dt);
     cur.current = Math.abs(next - shiftY) < 0.1 ? shiftY : next;
-    apply(cur.current);
-    if (cur.current !== shiftY) invalidate();
+    const [jx, jz] = shaking ? cameraShake.step(dt) : [0, 0];
+    apply(cur.current, jx, jz);
+    if (cur.current !== shiftY || cameraShake.amp > 0) invalidate();
+    else if (shaking) apply(cur.current); // 흔들림 끝: 정위치로
   });
 
   return null;
