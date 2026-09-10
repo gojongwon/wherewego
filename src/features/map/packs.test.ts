@@ -17,11 +17,22 @@ describe('PACKS.tw', () => {
   });
 });
 
+describe('PACKS.vn', () => {
+  it('황사·쯔엉사 없는 성·시 34', () => {
+    expect(PACKS.vn.regions).toHaveLength(34);
+    expect(new Set(PACKS.vn.regions.map((r) => r.code)).size).toBe(34);
+    expect(PACKS.vn.regions.every((r) => PACKS.vn.title(r) !== r.name)).toBe(true);
+    const east = PACKS.vn.regions.flatMap((r) => r.rings.flat()).some(([lon]) => lon > 110.5);
+    expect(east).toBe(false);
+  });
+});
+
 describe('parseMapId', () => {
-  it('kr / jp / tw. 옛 서·동 값은 일본', () => {
+  it('kr / jp / tw / vn. 옛 서·동 값은 일본', () => {
     expect(parseMapId('kr')).toBe('kr');
     expect(parseMapId('jp')).toBe('jp');
     expect(parseMapId('tw')).toBe('tw');
+    expect(parseMapId('vn')).toBe('vn');
     expect(parseMapId('jpw')).toBe('jp');
     expect(parseMapId('us')).toBeNull();
   });

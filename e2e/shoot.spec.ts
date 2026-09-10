@@ -41,6 +41,13 @@ test('대만 지도: 현시 20', async ({ page }) => {
   await expect(page.locator('.stage')).toHaveAttribute('data-map', 'tw');
 });
 
+test('베트남 지도: 성·시 34', async ({ page }) => {
+  await page.goto('/?map=vn');
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-ready', '1', { timeout: 10_000 });
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '34');
+  await expect(page.locator('.stage')).toHaveAttribute('data-map', 'vn');
+});
+
 test('나라 목록에서 대만으로 바꾼다', async ({ page }) => {
   await page.getByTestId('map-picker').click();
   await page.getByRole('option', { name: '대만' }).click();

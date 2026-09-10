@@ -15,6 +15,7 @@
     "map:build": "bash scripts/build-map.sh",
     "map:build:jp": "bash scripts/build-map.sh jp",
     "map:build:tw": "bash scripts/build-map.sh tw",
+    "map:build:vn": "bash scripts/build-map.sh vn",
     "tokens:build": "node scripts/build-tokens.mjs",
     "prebuild": "npm run tokens:build"
   },

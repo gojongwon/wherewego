@@ -1,10 +1,12 @@
 import krTopoJson from './data/sgg.topo.json';
 import jpTopoJson from './data/jp.topo.json';
 import twTopoJson from './data/tw.topo.json';
+import vnTopoJson from './data/vn.topo.json';
 import { sidoBoundaries } from './boundaries';
 import { prettyName, provinceOf } from './names';
 import { jpSubtitle, jpTitle } from './names-jp';
 import { twSubtitle, twTitle } from './names-tw';
+import { vnSubtitle, vnTitle } from './names-vn';
 import {
   JP_EXTENT,
   JP_ROTATE_DEG,
@@ -12,12 +14,14 @@ import {
   MAINLAND_EXTENT,
   TW_CENTER_LON,
   TW_EXTENT,
+  VN_CENTER_LON,
+  VN_EXTENT,
   type Extent,
 } from './projection';
 import { decodeTopo, type Region, type Topology } from './topo';
 import type { LonLat } from '@/shared/geo';
 
-export type MapId = 'kr' | 'jp' | 'tw';
+export type MapId = 'kr' | 'jp' | 'tw' | 'vn';
 
 export interface MapPack {
   id: MapId;
@@ -35,6 +39,7 @@ export interface MapPack {
 const krTopo = krTopoJson as unknown as Topology;
 const jpTopo = jpTopoJson as unknown as Topology;
 const twTopo = twTopoJson as unknown as Topology;
+const vnTopo = vnTopoJson as unknown as Topology;
 
 export const PACKS: Record<MapId, MapPack> = {
   kr: {
@@ -70,15 +75,26 @@ export const PACKS: Record<MapId, MapPack> = {
     subtitle: twSubtitle,
     sourceLabel: '내정부 鄉鎮市區界 · taiwan-atlas',
   },
+  vn: {
+    id: 'vn',
+    label: '베트남',
+    regions: decodeTopo(vnTopo),
+    boundaries: sidoBoundaries(vnTopo, { group: (p) => vnSubtitle(p) }),
+    extent: VN_EXTENT,
+    centerLon: VN_CENTER_LON,
+    title: vnTitle,
+    subtitle: vnSubtitle,
+    sourceLabel: '행정구역 개편(2025) · sapnhap.bando.com.vn',
+  },
 };
 
 /** 나라 목록 표시 순서 */
-export const MAP_IDS: readonly MapId[] = ['kr', 'jp', 'tw'];
+export const MAP_IDS: readonly MapId[] = ['kr', 'jp', 'tw', 'vn'];
 
 export const MAP_STORAGE_KEY = 'wwg-map';
 
 export function parseMapId(raw: string | null | undefined): MapId | null {
-  if (raw === 'kr' || raw === 'jp' || raw === 'tw') return raw;
+  if (raw === 'kr' || raw === 'jp' || raw === 'tw' || raw === 'vn') return raw;
   if (raw === 'jpw' || raw === 'jpe') return 'jp';
   return null;
 }

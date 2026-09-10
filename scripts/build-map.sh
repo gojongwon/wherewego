@@ -3,6 +3,7 @@
 #   npm run map:build        한국 시군구 (설계서 §6.1)
 #   npm run map:build:jp     일본 도도부현 (오키나와 제외)
 #   npm run map:build:tw     대만 현시 (진먼·롄장 제외)
+#   npm run map:build:vn     베트남 성·시 (황사·쯔엉사 제외)
 #
 # SIMPLIFY=20% npm run map:build  (단순화 강도 조절)
 set -euo pipefail
@@ -13,7 +14,37 @@ SIMPLIFY="${SIMPLIFY:-30%}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-if [ "$TARGET" = tw ]; then
+if [ "$TARGET" = vn ]; then
+  # 원본: 2025 성급 34 — sapnhap.bando.com.vn 경계를 단순화한 vietnam-3d-map
+  SRC_URL="https://raw.githubusercontent.com/lamngockhuong/vietnam-3d-map/main/public/provinces.json"
+  OUT="src/features/map/data/vn.topo.json"
+  echo "▶ 다운로드: $SRC_URL"
+  curl -sSL "$SRC_URL" -o "$TMP/src.json"
+
+  echo "▶ GeoJSON 변환"
+  node --input-type=module -e '
+    import { readFileSync, writeFileSync } from "node:fs";
+    const src = JSON.parse(readFileSync(process.argv[1], "utf8"));
+    writeFileSync(process.argv[2], JSON.stringify({
+      type: "FeatureCollection",
+      features: src.provinces.map((p) => ({
+        type: "Feature",
+        properties: { code: String(p.id), name: p.name },
+        geometry: { type: "MultiPolygon", coordinates: p.polygons.map((ring) => [ring]) },
+      })),
+    }));
+  ' "$TMP/src.json" "$TMP/src.geojson"
+
+  # 본토+푸꾸옥+꼰다오. 황사(호앙사)·쯔엉사는 화면을 가로로 늘리므로 자른다.
+  echo "▶ mapshaper: 황사·쯔엉사 클립, simplify $SIMPLIFY, 2km² 미만 섬 제거"
+  npx --yes mapshaper "$TMP/src.geojson" \
+    -clip bbox=102.10,8.35,109.70,23.45 \
+    -simplify "$SIMPLIFY" keep-shapes \
+    -filter-islands min-area=2km2 \
+    -each 'code=String(code); name=name' \
+    -rename-layers vn \
+    -o format=topojson quantization=20000 "$OUT"
+elif [ "$TARGET" = tw ]; then
   # 원본: 내정부 鄉鎮市區界 — taiwan-atlas counties (22 縣市)
   SRC_URL="https://unpkg.com/taiwan-atlas@2021.9.20/counties-10t.json"
   OUT="src/features/map/data/tw.topo.json"

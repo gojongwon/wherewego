@@ -10,6 +10,8 @@ export {
   JP_ROTATE_DEG,
   TW_EXTENT,
   TW_CENTER_LON,
+  VN_EXTENT,
+  VN_CENTER_LON,
   type Projection,
   type Box,
   type Extent,
@@ -20,6 +22,7 @@ export { toScreen, findRegion, pointInRegion, inRing, type ScreenRegion, type Hi
 export { provinceOf, prettyName, fullName, PROVINCE_BY_CODE, PROVINCE_OVERRIDE } from './names';
 export { jpTitle, jpSubtitle } from './names-jp';
 export { twTitle, twSubtitle } from './names-tw';
+export { vnTitle, vnSubtitle } from './names-vn';
 export { PACKS, MAP_IDS, parseMapId, MAP_STORAGE_KEY, type MapId, type MapPack } from './packs';
 
 /** 번들에 포함된 시군구 249개 (울릉군 제외, 설계서 §6.1). 한국 팩 별칭. */

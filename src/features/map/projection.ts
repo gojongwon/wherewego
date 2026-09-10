@@ -53,6 +53,10 @@ export const JP_ROTATE_DEG = 17;
 export const TW_EXTENT: Extent = { lon: [119.42, 122.02], lat: [21.89, 25.31] };
 export const TW_CENTER_LON = 120.72;
 
+/** 본토+푸꾸옥+꼰다오. 황사·쯔엉사는 fit에서 뺀다. */
+export const VN_EXTENT: Extent = { lon: [102.14, 109.50], lat: [8.40, 23.40] };
+export const VN_CENTER_LON = 105.90;
+
 const mercY = (lat: number): number => Math.log(Math.tan(Math.PI / 4 + (lat * D2R) / 2));
 const invLat = (my: number): number => (2 * Math.atan(Math.exp(my)) - Math.PI / 2) / D2R;
 

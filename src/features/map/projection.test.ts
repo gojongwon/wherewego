@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { computeLayout } from '@/app/layout';
 import { REGIONS } from './index';
-import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, JP_EXTENT, JP_ROTATE_DEG, TW_EXTENT, TW_CENTER_LON, fitMercator } from './projection';
+import {
+  MAINLAND_CENTER_LON,
+  MAINLAND_EXTENT,
+  JP_EXTENT,
+  JP_ROTATE_DEG,
+  TW_EXTENT,
+  TW_CENTER_LON,
+  VN_EXTENT,
+  VN_CENTER_LON,
+  fitMercator,
+} from './projection';
 import { PACKS } from './packs';
 
 const box = { x: 18, y: 105, width: 354, height: 520 };
@@ -206,6 +216,33 @@ describe('fitMercator — 대만', () => {
       [120.301, 22.627],
       [120.744, 21.998],
       [119.566, 23.571],
+    ] as const) {
+      const [x, y] = proj.project(ll);
+      expect(x).toBeGreaterThanOrEqual(mapBox.x);
+      expect(x).toBeLessThanOrEqual(mapBox.x + mapBox.width);
+      expect(y).toBeGreaterThanOrEqual(mapBox.y);
+      expect(y).toBeLessThanOrEqual(mapBox.y + mapBox.height);
+    }
+  });
+});
+
+describe('fitMercator — 베트남', () => {
+  const layout = computeLayout(390, 844);
+  const proj = fitMercator(PACKS.vn.regions, layout.mapBox, {
+    extent: VN_EXTENT,
+    align: 'top',
+    centerLon: VN_CENTER_LON,
+  });
+  const { mapBox } = layout;
+
+  it('하노이·다낭·호치민·까마우·디엔비엔·푸꾸옥이 mapBox 안', () => {
+    for (const ll of [
+      [105.85, 21.03],
+      [108.20, 16.05],
+      [106.70, 10.78],
+      [105.15, 8.80],
+      [103.02, 21.39],
+      [103.98, 10.22],
     ] as const) {
       const [x, y] = proj.project(ll);
       expect(x).toBeGreaterThanOrEqual(mapBox.x);
