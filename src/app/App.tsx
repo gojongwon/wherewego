@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react';
 import { LAYOUT, PARAMS } from '@/shared/params';
 import { haversineKm } from '@/shared/geo';
-import { PACKS, parseMapId, MAP_STORAGE_KEY, fitMercator, toScreen, type MapId } from '@/features/map';
+import { PACKS, MAP_IDS, parseMapId, MAP_STORAGE_KEY, fitMercator, toScreen, type MapId } from '@/features/map';
 import { InputLayer, createAimState, parseEventParam, parseSlowParam, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
 import { ResultSheet, parseReplayParams } from '@/features/result';
@@ -19,7 +19,7 @@ export function App() {
   const [round, setRound] = useState(newRound);
   const [forceEvent] = useState(() => (import.meta.env.DEV ? parseEventParam(location.search) : undefined));
   const [slow] = useState(() => (import.meta.env.DEV ? parseSlowParam(location.search) : 1));
-  const [infoOpen, setInfoOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [mapId, setMapId] = useState<MapId>(() => {
     const fromUrl = parseMapId(new URLSearchParams(location.search).get('map'));
     if (fromUrl) return fromUrl;
@@ -123,6 +123,7 @@ export function App() {
 
   const selectMap = useCallback(
     (id: MapId) => {
+      setMenuOpen(false);
       if (id === mapId) return;
       setMapId(id);
       const url = new URL(location.href);
@@ -208,34 +209,44 @@ export function App() {
       <header className="hud">
         <div className="hud-start">
           <h1 className="brand">우리 어디가</h1>
-          <div className="map-toggle" role="group" aria-label="지도">
-            <button type="button" aria-pressed={pack.id === 'kr'} onClick={() => selectMap('kr')}>
-              한국
-            </button>
-            <button type="button" aria-pressed={pack.id === 'jp'} onClick={() => selectMap('jp')}>
-              일본
-            </button>
-          </div>
+          <button
+            type="button"
+            className="map-pick"
+            data-testid="map-picker"
+            aria-haspopup="listbox"
+            aria-expanded={menuOpen}
+            aria-label="나라 선택"
+            onClick={() => setMenuOpen((v) => !v)}
+          >
+            {pack.label}
+          </button>
         </div>
         <div className="hud-end">
           <WindGauge round={round} kmPerPx={kmPerPx} active={state.phase === 'IDLE' || state.phase === 'AIMING'} />
-          <button
-            type="button"
-            className="info-btn"
-            aria-label="정보"
-            aria-expanded={infoOpen}
-            onClick={() => setInfoOpen((v) => !v)}
-          >
-            i
-          </button>
         </div>
       </header>
-      {infoOpen && (
-        <div className="info-pop" role="dialog" aria-label="정보">
-          <b>우리 어디가</b> v0.2 · Where we go
-          <br />
-          경계 데이터: {pack.sourceLabel}
-        </div>
+      {menuOpen && (
+        <>
+          <button type="button" className="menu-dismiss" aria-label="닫기" onClick={() => setMenuOpen(false)} />
+          <div className="menu-pop" role="listbox" aria-label="나라">
+            {MAP_IDS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="option"
+                aria-selected={pack.id === id}
+                onClick={() => selectMap(id)}
+              >
+                {PACKS[id].label}
+              </button>
+            ))}
+            <p className="menu-meta">
+              우리 어디가 v0.2
+              <br />
+              {pack.sourceLabel}
+            </p>
+          </div>
+        </>
       )}
 
       <p className="hint" data-testid="hint">

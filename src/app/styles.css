@@ -72,30 +72,82 @@ body {
   gap: 10px;
   min-width: 0;
 }
-.map-toggle {
+.map-pick {
   pointer-events: auto;
-  display: flex;
-  gap: 2px;
-}
-.map-toggle button {
   appearance: none;
   margin: 0;
-  padding: 4px 8px;
+  padding: 4px 10px;
   border: none;
   border-radius: 999px;
-  background: transparent;
-  color: var(--color-text-muted);
+  background: color-mix(in srgb, var(--color-bg-surface) 70%, transparent);
+  color: var(--color-text-primary);
   font: inherit;
   font-size: var(--font-size-xs);
   cursor: pointer;
 }
-.map-toggle button[aria-pressed='true'] {
-  background: color-mix(in srgb, var(--color-bg-surface) 70%, transparent);
-  color: var(--color-text-primary);
+.map-pick::after {
+  content: '';
+  display: inline-block;
+  margin-left: 5px;
+  border: 3px solid transparent;
+  border-top-color: var(--color-text-muted);
+  transform: translateY(1px);
 }
-.map-toggle button:focus-visible {
+.map-pick:focus-visible {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
+}
+.menu-dismiss {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  pointer-events: auto;
+}
+.menu-pop {
+  pointer-events: auto;
+  position: absolute;
+  left: 18px;
+  top: calc(env(safe-area-inset-top, 0px) + 48px);
+  min-width: 148px;
+  padding: 6px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-paper);
+  border: 1px solid var(--color-border-subtle);
+}
+.menu-pop button {
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 8px 10px;
+  border: none;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  text-align: left;
+  cursor: pointer;
+}
+.menu-pop button[aria-selected='true'] {
+  background: color-mix(in srgb, var(--color-bg-canvas) 70%, transparent);
+  color: var(--color-text-primary);
+}
+.menu-pop button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 0;
+}
+.menu-meta {
+  margin: 6px 10px 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border-subtle);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: 1.45;
 }
 .brand {
   margin: 0;
@@ -111,44 +163,6 @@ body {
   align-items: center;
   gap: 8px;
 }
-.info-btn {
-  pointer-events: auto;
-  appearance: none;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--color-water-300);
-  background: color-mix(in srgb, var(--color-bg-surface) 60%, transparent);
-  color: var(--color-text-muted);
-  font: inherit;
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-}
-.info-btn:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: 2px;
-}
-.info-pop {
-  position: absolute;
-  right: 16px;
-  top: calc(env(safe-area-inset-top, 0px) + 48px);
-  max-width: 260px;
-  padding: var(--space-3) var(--space-4);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-surface);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  line-height: 1.5;
-  box-shadow: var(--shadow-paper);
-  border: 1px solid var(--color-border-subtle);
-}
-.info-pop b {
-  color: var(--color-text-primary);
-}
-
 /* ---------- 활 주변: 힌트는 활 아래(당기는 자리) ---------- */
 .hint {
   position: absolute;

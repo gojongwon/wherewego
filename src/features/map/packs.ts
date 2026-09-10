@@ -21,6 +21,7 @@ export type MapId = 'kr' | 'jp' | 'tw';
 
 export interface MapPack {
   id: MapId;
+  label: string;
   regions: Region[];
   boundaries: LonLat[][];
   extent: Extent;
@@ -38,6 +39,7 @@ const twTopo = twTopoJson as unknown as Topology;
 export const PACKS: Record<MapId, MapPack> = {
   kr: {
     id: 'kr',
+    label: '한국',
     regions: decodeTopo(krTopo),
     boundaries: sidoBoundaries(krTopo),
     extent: MAINLAND_EXTENT,
@@ -48,6 +50,7 @@ export const PACKS: Record<MapId, MapPack> = {
   },
   jp: {
     id: 'jp',
+    label: '일본',
     regions: decodeTopo(jpTopo),
     boundaries: sidoBoundaries(jpTopo, { group: (p) => p.code }),
     extent: JP_EXTENT,
@@ -58,6 +61,7 @@ export const PACKS: Record<MapId, MapPack> = {
   },
   tw: {
     id: 'tw',
+    label: '대만',
     regions: decodeTopo(twTopo),
     boundaries: sidoBoundaries(twTopo, { group: (p) => twSubtitle(p) }),
     extent: TW_EXTENT,
@@ -67,6 +71,9 @@ export const PACKS: Record<MapId, MapPack> = {
     sourceLabel: '내정부 鄉鎮市區界 · taiwan-atlas',
   },
 };
+
+/** 나라 목록 표시 순서 */
+export const MAP_IDS: readonly MapId[] = ['kr', 'jp', 'tw'];
 
 export const MAP_STORAGE_KEY = 'wwg-map';
 

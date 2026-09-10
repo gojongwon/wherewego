@@ -20,7 +20,7 @@ export { toScreen, findRegion, pointInRegion, inRing, type ScreenRegion, type Hi
 export { provinceOf, prettyName, fullName, PROVINCE_BY_CODE, PROVINCE_OVERRIDE } from './names';
 export { jpTitle, jpSubtitle } from './names-jp';
 export { twTitle, twSubtitle } from './names-tw';
-export { PACKS, parseMapId, MAP_STORAGE_KEY, type MapId, type MapPack } from './packs';
+export { PACKS, MAP_IDS, parseMapId, MAP_STORAGE_KEY, type MapId, type MapPack } from './packs';
 
 /** 번들에 포함된 시군구 249개 (울릉군 제외, 설계서 §6.1). 한국 팩 별칭. */
 export const REGIONS = PACKS.kr.regions;

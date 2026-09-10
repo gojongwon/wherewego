@@ -41,6 +41,13 @@ test('대만 지도: 현시 20', async ({ page }) => {
   await expect(page.locator('.stage')).toHaveAttribute('data-map', 'tw');
 });
 
+test('나라 목록에서 대만으로 바꾼다', async ({ page }) => {
+  await page.getByTestId('map-picker').click();
+  await page.getByRole('option', { name: '대만' }).click();
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '20');
+  await expect(page.locator('.stage')).toHaveAttribute('data-map', 'tw');
+});
+
 test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', async ({ page }) => {
   await pull(page, -10, 95); // 중간 세기, 살짝 오른쪽 위
   const sheet = page.locator('.sheet');
