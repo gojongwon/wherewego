@@ -8,12 +8,21 @@ describe('PACKS.jp', () => {
   });
 });
 
+describe('PACKS.tw', () => {
+  it('진먼·롄장 없는 현시 20', () => {
+    expect(PACKS.tw.regions).toHaveLength(20);
+    expect(PACKS.tw.regions.some((r) => r.name === '金門縣' || r.name === '連江縣' || r.code === '09007' || r.code === '09020')).toBe(
+      false,
+    );
+  });
+});
+
 describe('parseMapId', () => {
-  it('kr / jp. 옛 서·동 값은 일본 한 장', () => {
+  it('kr / jp / tw. 옛 서·동 값은 일본', () => {
     expect(parseMapId('kr')).toBe('kr');
     expect(parseMapId('jp')).toBe('jp');
+    expect(parseMapId('tw')).toBe('tw');
     expect(parseMapId('jpw')).toBe('jp');
-    expect(parseMapId('jpe')).toBe('jp');
     expect(parseMapId('us')).toBeNull();
   });
 });

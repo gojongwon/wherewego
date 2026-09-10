@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeLayout } from '@/app/layout';
 import { REGIONS } from './index';
-import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, JP_EXTENT, JP_ROTATE_DEG, fitMercator } from './projection';
+import { MAINLAND_CENTER_LON, MAINLAND_EXTENT, JP_EXTENT, JP_ROTATE_DEG, TW_EXTENT, TW_CENTER_LON, fitMercator } from './projection';
 import { PACKS } from './packs';
 
 const box = { x: 18, y: 105, width: 354, height: 520 };
@@ -181,6 +181,31 @@ describe('fitMercator — 일본 한 장 (열도 회전)', () => {
       [130.55, 31.56],
       [139.76, 35.68],
       [141.35, 43.06],
+    ] as const) {
+      const [x, y] = proj.project(ll);
+      expect(x).toBeGreaterThanOrEqual(mapBox.x);
+      expect(x).toBeLessThanOrEqual(mapBox.x + mapBox.width);
+      expect(y).toBeGreaterThanOrEqual(mapBox.y);
+      expect(y).toBeLessThanOrEqual(mapBox.y + mapBox.height);
+    }
+  });
+});
+
+describe('fitMercator — 대만', () => {
+  const layout = computeLayout(390, 844);
+  const proj = fitMercator(PACKS.tw.regions, layout.mapBox, {
+    extent: TW_EXTENT,
+    align: 'top',
+    centerLon: TW_CENTER_LON,
+  });
+  const { mapBox } = layout;
+
+  it('타이베이·가오슝·헝춘·펑후가 mapBox 안', () => {
+    for (const ll of [
+      [121.565, 25.033],
+      [120.301, 22.627],
+      [120.744, 21.998],
+      [119.566, 23.571],
     ] as const) {
       const [x, y] = proj.project(ll);
       expect(x).toBeGreaterThanOrEqual(mapBox.x);

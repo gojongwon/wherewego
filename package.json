@@ -14,6 +14,7 @@
     "e2e": "playwright test",
     "map:build": "bash scripts/build-map.sh",
     "map:build:jp": "bash scripts/build-map.sh jp",
+    "map:build:tw": "bash scripts/build-map.sh tw",
     "tokens:build": "node scripts/build-tokens.mjs",
     "prebuild": "npm run tokens:build"
   },

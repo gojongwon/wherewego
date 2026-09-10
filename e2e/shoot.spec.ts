@@ -34,6 +34,13 @@ test('일본 지도: 도도부현 46', async ({ page }) => {
   await expect(page.locator('.stage')).toHaveAttribute('data-map', 'jp');
 });
 
+test('대만 지도: 현시 20', async ({ page }) => {
+  await page.goto('/?map=tw');
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-ready', '1', { timeout: 10_000 });
+  await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '20');
+  await expect(page.locator('.stage')).toHaveAttribute('data-map', 'tw');
+});
+
 test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', async ({ page }) => {
   await pull(page, -10, 95); // 중간 세기, 살짝 오른쪽 위
   const sheet = page.locator('.sheet');

@@ -2,6 +2,7 @@
 # 경계 데이터 파이프라인
 #   npm run map:build        한국 시군구 (설계서 §6.1)
 #   npm run map:build:jp     일본 도도부현 (오키나와 제외)
+#   npm run map:build:tw     대만 현시 (진먼·롄장 제외)
 #
 # SIMPLIFY=20% npm run map:build  (단순화 강도 조절)
 set -euo pipefail
@@ -12,7 +13,23 @@ SIMPLIFY="${SIMPLIFY:-30%}"
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 
-if [ "$TARGET" = jp ]; then
+if [ "$TARGET" = tw ]; then
+  # 원본: 내정부 鄉鎮市區界 — taiwan-atlas counties (22 縣市)
+  SRC_URL="https://unpkg.com/taiwan-atlas@2021.9.20/counties-10t.json"
+  OUT="src/features/map/data/tw.topo.json"
+  echo "▶ 다운로드: $SRC_URL"
+  curl -sSL "$SRC_URL" -o "$TMP/src.json"
+
+  echo "▶ mapshaper: 진먼·롄장 제외, simplify $SIMPLIFY, 2km² 미만 섬 제거"
+  npx --yes mapshaper "$TMP/src.json" \
+    -filter 'COUNTYNAME != "連江縣" && COUNTYNAME != "金門縣"' target=counties \
+    -drop target=nation \
+    -each 'code=COUNTYCODE; name=COUNTYNAME; delete COUNTYID; delete COUNTYCODE; delete COUNTYNAME; delete COUNTYENG' \
+    -simplify "$SIMPLIFY" keep-shapes \
+    -filter-islands min-area=2km2 \
+    -rename-layers tw \
+    -o format=topojson quantization=20000 "$OUT"
+elif [ "$TARGET" = jp ]; then
   # 원본: 국토교통성 국토수치정보(N03) — smartnews-smri/japan-topography 1% 단순화본
   SRC_URL="https://raw.githubusercontent.com/smartnews-smri/japan-topography/main/data/municipality/geojson/s0010/prefectures.json"
   OUT="src/features/map/data/jp.topo.json"
