@@ -308,6 +308,7 @@ export function App() {
         titleOf={pack.title}
         subtitleOf={pack.subtitle}
         playMode={playMode}
+        mapId={pack.id}
         open={state.phase === 'RESULT'}
         onAgain={onAgain}
       />

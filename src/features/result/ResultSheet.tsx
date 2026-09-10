@@ -1,11 +1,12 @@
 import type { Ref } from 'react';
 import { PARAMS } from '@/shared/params';
 import { Button, Sheet } from '@/shared/ui';
-import type { Region } from '@/features/map';
+import type { MapId, Region } from '@/features/map';
 import { EVENT_LABEL } from '@/features/shooter';
 import { josa } from '@/shared/hangul';
 import type { Shot } from '@/app/gameReducer';
 import type { PlayMode } from '@/app/playMode';
+import { mapLink } from './share';
 import './ResultSheet.css';
 
 interface Props {
@@ -14,6 +15,7 @@ interface Props {
   titleOf: (region: Region) => string;
   subtitleOf: (region: Region) => string;
   playMode?: PlayMode;
+  mapId: MapId;
   open: boolean;
   onAgain: () => void;
   /** App이 높이를 읽어 지도 시프트에 쓴다 */
@@ -21,9 +23,21 @@ interface Props {
 }
 
 /** 결과 바텀시트 (설계서 §4.4) */
-export function ResultSheet({ shot, regions, titleOf, subtitleOf, playMode = 'aim', open, onAgain, ref }: Props) {
+export function ResultSheet({
+  shot,
+  regions,
+  titleOf,
+  subtitleOf,
+  playMode = 'aim',
+  mapId,
+  open,
+  onAgain,
+  ref,
+}: Props) {
   const region = shot?.hit ? regions[shot.hit.index] : null;
   const [lon, lat] = shot?.lonLat ?? [0, 0];
+  const place = region ? titleOf(region) : '바다에 빠졌어요';
+  const map = shot ? mapLink(mapId, shot.lonLat, place) : null;
 
   return (
     <Sheet ref={ref} open={open} onClose={onAgain}>
@@ -68,6 +82,7 @@ export function ResultSheet({ shot, regions, titleOf, subtitleOf, playMode = 'ai
         <Button variant="primary" onClick={onAgain} data-testid="again">
           다시 쏘기
         </Button>
+        {map && <Button href={map.href}>{map.label}</Button>}
       </div>
     </Sheet>
   );
@@ -75,14 +90,13 @@ export function ResultSheet({ shot, regions, titleOf, subtitleOf, playMode = 'ai
 
 function ShotStory({ shot, playMode }: { shot: Shot; playMode: PlayMode }) {
   if (playMode === 'luck') {
+    const story = shot.geometry.event
+      ? `${josa(EVENT_LABEL[shot.geometry.event.kind], '이/가')} 데려갔어요`
+      : '조준은 핑계였어요';
     return (
       <>
         <dt>운</dt>
-        <dd>
-          {shot.geometry.event
-            ? `${josa(EVENT_LABEL[shot.geometry.event.kind], '이/가')} 데려갔어요`
-            : '조준은 핑계였어요'}
-        </dd>
+        <dd>{story}</dd>
       </>
     );
   }

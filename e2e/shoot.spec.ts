@@ -84,6 +84,7 @@ test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', 
   // 육지든 헛발이든 헤더는 있어야 한다
   await expect(sheet.locator('.place')).not.toBeEmpty();
   await expect(sheet).toContainText(/데려갔어요|핑계/);
+  await expect(page.getByRole('link', { name: '카카오맵' })).toHaveAttribute('href', /map\.kakao\.com/);
   await page.getByTestId('again').click();
   await expect(sheet).not.toHaveClass(/show/);
   await expect(page.getByTestId('hint')).toContainText('아래로 당겼다 놓으면');
