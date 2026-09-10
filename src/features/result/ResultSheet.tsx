@@ -3,7 +3,9 @@ import { PARAMS } from '@/shared/params';
 import { Button, Sheet } from '@/shared/ui';
 import type { Region } from '@/features/map';
 import { EVENT_LABEL } from '@/features/shooter';
+import { josa } from '@/shared/hangul';
 import type { Shot } from '@/app/gameReducer';
+import type { PlayMode } from '@/app/playMode';
 import './ResultSheet.css';
 
 interface Props {
@@ -11,6 +13,7 @@ interface Props {
   regions: readonly Region[];
   titleOf: (region: Region) => string;
   subtitleOf: (region: Region) => string;
+  playMode?: PlayMode;
   open: boolean;
   onAgain: () => void;
   /** App이 높이를 읽어 지도 시프트에 쓴다 */
@@ -18,7 +21,7 @@ interface Props {
 }
 
 /** 결과 바텀시트 (설계서 §4.4) */
-export function ResultSheet({ shot, regions, titleOf, subtitleOf, open, onAgain, ref }: Props) {
+export function ResultSheet({ shot, regions, titleOf, subtitleOf, playMode = 'aim', open, onAgain, ref }: Props) {
   const region = shot?.hit ? regions[shot.hit.index] : null;
   const [lon, lat] = shot?.lonLat ?? [0, 0];
 
@@ -34,16 +37,7 @@ export function ResultSheet({ shot, regions, titleOf, subtitleOf, open, onAgain,
             <dd>
               {lat.toFixed(3)}, {lon.toFixed(3)}
             </dd>
-            <dt>바람</dt>
-            <dd>바람에 {shot.driftKm.toFixed(1)}km 밀림</dd>
-            {shot.geometry.event && (
-              <>
-                <dt>사건</dt>
-                <dd>
-                  {EVENT_LABEL[shot.geometry.event.kind]}에 맞아 {shot.kickKm.toFixed(1)}km 튕김
-                </dd>
-              </>
-            )}
+            <ShotStory shot={shot} playMode={playMode} />
           </dl>
         </>
       )}
@@ -61,20 +55,7 @@ export function ResultSheet({ shot, regions, titleOf, subtitleOf, open, onAgain,
             <dd>
               {lat.toFixed(4)}, {lon.toFixed(4)}
             </dd>
-            {!shot.replay && (
-              <>
-                <dt>바람</dt>
-                <dd>바람에 {shot.driftKm.toFixed(1)}km 밀림</dd>
-                {shot.geometry.event && (
-                  <>
-                    <dt>사건</dt>
-                    <dd>
-                      {EVENT_LABEL[shot.geometry.event.kind]}에 맞아 {shot.kickKm.toFixed(1)}km 튕김
-                    </dd>
-                  </>
-                )}
-              </>
-            )}
+            {!shot.replay && <ShotStory shot={shot} playMode={playMode} />}
             <dt>코드</dt>
             <dd>{region.code}</dd>
           </dl>
@@ -89,5 +70,34 @@ export function ResultSheet({ shot, regions, titleOf, subtitleOf, open, onAgain,
         </Button>
       </div>
     </Sheet>
+  );
+}
+
+function ShotStory({ shot, playMode }: { shot: Shot; playMode: PlayMode }) {
+  if (playMode === 'luck') {
+    return (
+      <>
+        <dt>운</dt>
+        <dd>
+          {shot.geometry.event
+            ? `${josa(EVENT_LABEL[shot.geometry.event.kind], '이/가')} 데려갔어요`
+            : '조준은 핑계였어요'}
+        </dd>
+      </>
+    );
+  }
+  return (
+    <>
+      <dt>바람</dt>
+      <dd>바람에 {shot.driftKm.toFixed(1)}km 밀림</dd>
+      {shot.geometry.event && (
+        <>
+          <dt>사건</dt>
+          <dd>
+            {EVENT_LABEL[shot.geometry.event.kind]}에 맞아 {shot.kickKm.toFixed(1)}km 튕김
+          </dd>
+        </>
+      )}
+    </>
   );
 }

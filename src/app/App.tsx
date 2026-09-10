@@ -8,7 +8,16 @@ import { ResultSheet, parseReplayParams } from '@/features/result';
 import { WindGauge, newRound, windAt } from '@/features/wind';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
+import { applyLuck } from './luck';
 import { makeShot, replayShot } from './makeShot';
+import {
+  DEFAULT_PLAY_MODE,
+  MODE_LABEL,
+  MODE_STORAGE_KEY,
+  PLAY_MODES,
+  parsePlayMode,
+  type PlayMode,
+} from './playMode';
 
 export function App() {
   const stageRef = useRef<HTMLDivElement>(null);
@@ -29,6 +38,13 @@ export function App() {
       return 'kr';
     }
   });
+  const [playMode, setPlayMode] = useState<PlayMode>(() => {
+    try {
+      return parsePlayMode(localStorage.getItem(MODE_STORAGE_KEY)) ?? DEFAULT_PLAY_MODE;
+    } catch {
+      return DEFAULT_PLAY_MODE;
+    }
+  });
   const pack = PACKS[mapId];
   useEffect(() => {
     try {
@@ -37,6 +53,13 @@ export function App() {
       /* private mode */
     }
   }, [mapId]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODE_STORAGE_KEY, playMode);
+    } catch {
+      /* private mode */
+    }
+  }, [playMode]);
   // 조준 상태는 mutable 객체 — InputLayer가 쓰고 씬이 프레임마다 읽는다 (setState 없음, 설계서 §9.3)
   const [aim] = useState(createAimState);
 
@@ -104,9 +127,10 @@ export function App() {
   const onFire = useCallback(
     (geometry: ShotGeometry) => {
       if (!screen || !projection) return;
-      dispatch({ type: 'FIRE', shot: makeShot(geometry, screen, projection) });
+      const g = playMode === 'luck' ? applyLuck(geometry, screen) : geometry;
+      dispatch({ type: 'FIRE', shot: makeShot(g, screen, projection) });
     },
-    [screen, projection],
+    [screen, projection, playMode],
   );
   const onAgain = useCallback(() => {
     const resultOpen = (history.state as { wwg?: string } | null)?.wwg === 'result';
@@ -138,6 +162,10 @@ export function App() {
     [mapId],
   );
 
+  const selectMode = useCallback((next: PlayMode) => {
+    setPlayMode(next);
+  }, []);
+
   useEffect(() => {
     if (state.phase !== 'RESULT') return;
     if ((history.state as { wwg?: string } | null)?.wwg !== 'result') history.pushState({ wwg: 'result' }, '');
@@ -162,6 +190,7 @@ export function App() {
       ref={stageRef}
       data-phase={state.phase}
       data-map={pack.id}
+      data-mode={playMode}
       data-hit={hitIndex !== null ? pack.regions[hitIndex].code : ''}
       data-compact={layout?.compact ? '1' : '0'}
       style={
@@ -215,10 +244,10 @@ export function App() {
             data-testid="map-picker"
             aria-haspopup="listbox"
             aria-expanded={menuOpen}
-            aria-label="나라 선택"
+            aria-label="나라와 모드"
             onClick={() => setMenuOpen((v) => !v)}
           >
-            {pack.label}
+            {pack.label} · {MODE_LABEL[playMode]}
           </button>
         </div>
         <div className="hud-end">
@@ -228,18 +257,34 @@ export function App() {
       {menuOpen && (
         <>
           <button type="button" className="menu-dismiss" aria-label="닫기" onClick={() => setMenuOpen(false)} />
-          <div className="menu-pop" role="listbox" aria-label="나라">
-            {MAP_IDS.map((id) => (
-              <button
-                key={id}
-                type="button"
-                role="option"
-                aria-selected={pack.id === id}
-                onClick={() => selectMap(id)}
-              >
-                {PACKS[id].label}
-              </button>
-            ))}
+          <div className="menu-pop">
+            <div role="listbox" aria-label="나라">
+              {MAP_IDS.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="option"
+                  aria-selected={pack.id === id}
+                  onClick={() => selectMap(id)}
+                >
+                  {PACKS[id].label}
+                </button>
+              ))}
+            </div>
+            <div className="menu-modes" role="listbox" aria-label="모드">
+              {PLAY_MODES.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="option"
+                  aria-selected={playMode === id}
+                  data-testid={`mode-${id}`}
+                  onClick={() => selectMode(id)}
+                >
+                  {MODE_LABEL[id]}
+                </button>
+              ))}
+            </div>
             <p className="menu-meta">
               우리 어디가 v0.2
               <br />
@@ -250,7 +295,7 @@ export function App() {
       )}
 
       <p className="hint" data-testid="hint">
-        <HintText hint={state.hint} />
+        <HintText hint={state.hint} playMode={playMode} />
       </p>
 
       <ResultSheet
@@ -259,6 +304,7 @@ export function App() {
         regions={pack.regions}
         titleOf={pack.title}
         subtitleOf={pack.subtitle}
+        playMode={playMode}
         open={state.phase === 'RESULT'}
         onAgain={onAgain}
       />
@@ -266,10 +312,14 @@ export function App() {
   );
 }
 
-function HintText({ hint }: { hint: Hint }) {
+function HintText({ hint, playMode }: { hint: Hint; playMode: PlayMode }) {
   switch (hint.kind) {
     case 'idle':
-      return (
+      return playMode === 'luck' ? (
+        <>
+          ↓ 아래로 <b>당겼다 놓으면</b> 운이 정해요
+        </>
+      ) : (
         <>
           ↓ 아래로 <b>당겼다 놓으면</b> 화살이 날아가요
         </>

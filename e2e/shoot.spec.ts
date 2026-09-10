@@ -23,6 +23,8 @@ test('첫 화면: 지도 249개 시군구와 안내 힌트', async ({ page }) =>
   await expect(page.getByTestId('scene')).toHaveAttribute('data-region-count', '249');
   await expect(page.locator('.stage')).toHaveAttribute('data-phase', 'IDLE');
   await expect(page.locator('.stage')).toHaveAttribute('data-map', 'kr');
+  await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'luck');
+  await expect(page.getByTestId('map-picker')).toContainText('운');
   await expect(page.getByTestId('hint')).toContainText('아래로 당겼다 놓으면');
   await expect(page.getByTestId('wind')).toContainText(/km/);
 });
@@ -55,6 +57,25 @@ test('나라 목록에서 대만으로 바꾼다', async ({ page }) => {
   await expect(page.locator('.stage')).toHaveAttribute('data-map', 'tw');
 });
 
+test('모드를 조준으로 바꾼다', async ({ page }) => {
+  await page.getByTestId('map-picker').click();
+  await page.getByTestId('mode-aim').click();
+  await expect(page.locator('.stage')).toHaveAttribute('data-mode', 'aim');
+  await expect(page.getByTestId('map-picker')).toContainText('조준');
+  await page.locator('.menu-dismiss').click();
+  await expect(page.getByTestId('hint')).toContainText('화살이 날아가요');
+});
+
+test('조준 모드로 쏘면 바람 문구가 나온다', async ({ page }) => {
+  await page.getByTestId('map-picker').click();
+  await page.getByTestId('mode-aim').click();
+  await page.locator('.menu-dismiss').click();
+  await pull(page, -10, 95);
+  const sheet = page.locator('.sheet');
+  await expect(sheet).toHaveClass(/show/, { timeout: 5_000 });
+  await expect(sheet).toContainText(/바람에/);
+});
+
 test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', async ({ page }) => {
   await pull(page, -10, 95); // 중간 세기, 살짝 오른쪽 위
   const sheet = page.locator('.sheet');
@@ -62,7 +83,7 @@ test('당겨서 쏘면 결과 시트가 뜨고, 다시 쏘기로 돌아온다', 
   await expect(page.locator('.stage')).toHaveAttribute('data-phase', 'RESULT');
   // 육지든 헛발이든 헤더는 있어야 한다
   await expect(sheet.locator('.place')).not.toBeEmpty();
-  await expect(sheet).toContainText(/바람에/);
+  await expect(sheet).toContainText(/데려갔어요|핑계/);
   await page.getByTestId('again').click();
   await expect(sheet).not.toHaveClass(/show/);
   await expect(page.getByTestId('hint')).toContainText('아래로 당겼다 놓으면');
