@@ -4,7 +4,7 @@ import { haversineKm } from '@/shared/geo';
 import { PACKS, MAP_IDS, parseMapId, MAP_STORAGE_KEY, fitMercator, toScreen, type MapId } from '@/features/map';
 import { InputLayer, createAimState, parseEventParam, parseSlowParam, type ShotGeometry } from '@/features/shooter';
 import { SceneLayer, invalidate } from '@/features/scene';
-import { ResultSheet, parseReplayParams } from '@/features/result';
+import { ResultSheet, parseReplayParams, resultSearch } from '@/features/result';
 import { WindGauge, newRound, windAt } from '@/features/wind';
 import { gameReducer, initialState, type Hint } from './gameReducer';
 import { computeLayout } from './layout';
@@ -167,12 +167,15 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    if (state.phase !== 'RESULT') return;
-    if ((history.state as { wwg?: string } | null)?.wwg !== 'result') history.pushState({ wwg: 'result' }, '');
+    if (state.phase !== 'RESULT' || !state.shot) return;
+    const next = `${location.pathname}?${resultSearch(state.shot.lonLat, mapId)}`;
+    if ((history.state as { wwg?: string } | null)?.wwg !== 'result') {
+      history.pushState({ wwg: 'result' }, '', next);
+    }
     const onPop = () => onAgain();
     window.addEventListener('popstate', onPop);
     return () => window.removeEventListener('popstate', onPop);
-  }, [state.phase, onAgain]);
+  }, [state.phase, state.shot, mapId, onAgain]);
   const hitIndex = state.shot?.hit && state.phase !== 'FLYING' ? state.shot.hit.index : null;
   const kmPerPx = useMemo(() => {
     if (!projection || !layout) return 1;
